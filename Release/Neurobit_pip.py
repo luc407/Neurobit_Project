@@ -19,7 +19,6 @@ install('opencv-python')
 install('Pillow')
 install('cmake')
 install('boost')
-install('dlib')
 install('tqdm')
 
 import os

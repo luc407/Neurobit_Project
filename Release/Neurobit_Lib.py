@@ -116,7 +116,8 @@ def DrawEyePosition(frame, eyes, OD_p, OS_p):
 
 class Neurobit():
     def __init__(self):
-        self.version = '2.4'        
+        self.version = '2.4' 
+        self.major_path = os.getcwd()
         self.task = str("Subject")
         self.session = []
         self.saveVideo_path = []
@@ -138,23 +139,22 @@ class Neurobit():
         self.dx_ACT = {'ID':[],     'Examine Date':[],  'Orthophoria':[],
                        'XT':[],     'XT type':[],       'ET':[],            'ET type':[],
                        'LHT':[],    'RHT':[],           'LHoT':[],          'RHoT':[]}
-    def SaveID(self):
-        shutil.copyfile(os.path.join(self.main_path,'ID.ns'), os.path.join(self.main_path+"\\Result",'ID.ns'))  
-        shutil.copyfile(os.path.join(self.main_path,'NeurobitNS01-1.db'), os.path.join(self.main_path+"\\Result",'NeurobitNS01-1.db'))
     def GetFolderPath(self):
         ID, profile = self.GetDxSql()
-        profile[11] = datetime.now().strftime("%Y/%m/%d")
+        #profile[11] = datetime.now().strftime("%Y/%m/%d")
         #profile[11] = datetime(2022, 2, 13).strftime('%Y/%m/%d')
-        folder      = glob.glob(self.main_path+"\\Result\\"+str(profile[11].replace("/","")+"*"+ ID))[0]
+        folder      = glob.glob(self.main_path  +
+                                "\\Result\\"    + 
+                                ID + "\\"       +
+                                str(profile[11].replace("/","")+"*"+ ID))[0]
         return folder
     def GetSubjectFiles(self, main_path):          
         self.main_path  = main_path
-        self.SaveID()
         return glob.glob(self.GetFolderPath()+"\*.csv")
     def GetDxSql(self):
-        f   = open(os.path.join(self.main_path,'ID.ns'), 'r')
+        f   = open(os.path.join(self.major_path,'ID.ns'), 'r')
         ID  = f.readline().replace('\n','')
-        con = sqlite3.connect(os.path.join(self.main_path,"NeurobitNS01-1.db"))
+        con = sqlite3.connect(os.path.join(self.major_path,"NeurobitNS01-1.db"))
         cur = con.cursor()
         cur.execute("SELECT * FROM Patient WHERE [ID]='" + ID + "'")
 # =============================================================================
