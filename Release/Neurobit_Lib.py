@@ -14,8 +14,6 @@ import qrcode
 import sqlite3
 import shutil
 import time
-import urllib
-from win32api import GetSystemMetrics
 from tqdm import tqdm
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
@@ -23,6 +21,7 @@ from PIL import Image
 from matplotlib import pyplot as plt
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from function_eye_capture import capture_eye_iris, capture_eye_pupil, get_eye_position
+from datetime import datetime
 
 # google cloud function
 from google.cloud import storage
@@ -48,6 +47,13 @@ GAZE_9_STR      = ["Down",       "Front",    "Left",
                    "Left Down",  "Left Up",  "Right",  
                    "Right Down", "Right Up", "Up"]
 GAZE_9_EYEFIG = [8,5,6,9,3,4,7,1,2]
+px2degree = 0.06
+
+# color map
+line_color_palatte = {'greens':["#A5F5B3", "#51F46D",   "#00F62B", "#008D19", "#004D0D"], # pale / mid / base / dark / black              
+                      'oranges':["#FFD6AC", "#FFAC54", "#FF8300", "#B95F00", "#653400"],             
+                      'reds':["#FFB2AC", "#FF6154", "#FF1300", "#B90D00", "#650700"],                 
+                      'blues':["#A4DCEF", "#54C8EE", "#03B5F0", "#015773", "#012F3F"]}
 
 def enclosed_area(x_lower, y_lower, x_upper, y_upper):
     return(np.trapz(y_upper, x=x_upper) - np.trapz(y_lower, x=x_lower))
@@ -57,14 +63,14 @@ def trans_PD(AL,dx):
     dx = np.array(dx)
     for i in range(0,dx.size):
         try:
-            math.asin((2*abs(dx[i])/AL)*(5/33))
+            math.asin((2*abs(dx[i])/AL)*(px2degree))
         except:
             dx[i] = np.nan
         if dx[i]<0:
             dx[i] = -dx[i]
-            theta = np.append(theta, - 100*math.tan(math.asin((2*dx[i]/AL)*(5/33))))
+            theta = np.append(theta, - 100*math.tan(math.asin((2*dx[i]/AL)*(px2degree))))
         else:
-            theta = np.append(theta, 100*math.tan(math.asin((2*dx[i]/AL)*(5/33))))
+            theta = np.append(theta, 100*math.tan(math.asin((2*dx[i]/AL)*(px2degree))))
     return np.round(theta,1)
 
 def trans_AG(AL,dx):
@@ -72,14 +78,14 @@ def trans_AG(AL,dx):
     dx = np.array(dx)
     for i in range(0,dx.size):
         try:
-            math.asin((2*abs(dx[i])/AL)*(5/33))
+            math.asin((2*abs(dx[i])/AL)*(px2degree))
         except:
             dx[i] = np.nan
         if dx[i]<0:
             dx[i] = -dx[i]
-            theta = np.append(theta, - math.degrees(math.asin((2*dx[i]/AL)*(5/33))))
+            theta = np.append(theta, - math.degrees(math.asin((2*dx[i]/AL)*(px2degree))))
         else:
-            theta = np.append(theta, math.degrees(math.asin((2*dx[i]/AL)*(5/33))))
+            theta = np.append(theta, math.degrees(math.asin((2*dx[i]/AL)*(px2degree))))
     return np.round(theta,1)
 
 def GetVideo(csv_path):
@@ -108,19 +114,6 @@ def DrawEyePosition(frame, eyes, OD_p, OS_p):
                    int(OS_p[2]),
                    (255,255,255),2)
 
-def mouse_callback(event, x, y, flags, params):
-    #right-click event value is 2
-    if event == 2:
-        global right_clicks
-
-        #store the coordinates of the right-click event
-        right_clicks.append([x, y])
-
-        #this just verifies that the mouse data is being collected
-        #you probably want to remove this later
-        print(right_clicks)
-
-
 class Neurobit():
     def __init__(self):
         self.version = '2.4'        
@@ -146,10 +139,12 @@ class Neurobit():
                        'XT':[],     'XT type':[],       'ET':[],            'ET type':[],
                        'LHT':[],    'RHT':[],           'LHoT':[],          'RHoT':[]}
     def SaveID(self):
-        shutil.copyfile(os.path.join(self.main_path,'ID.txt'), os.path.join(self.main_path+"\\Result",'ID.txt'))  
+        shutil.copyfile(os.path.join(self.main_path,'ID.ns'), os.path.join(self.main_path+"\\Result",'ID.ns'))  
         shutil.copyfile(os.path.join(self.main_path,'NeurobitNS01-1.db'), os.path.join(self.main_path+"\\Result",'NeurobitNS01-1.db'))
     def GetFolderPath(self):
         ID, profile = self.GetDxSql()
+        profile[11] = datetime.now().strftime("%Y/%m/%d")
+        #profile[11] = datetime(2022, 2, 13).strftime('%Y/%m/%d')
         folder      = glob.glob(self.main_path+"\\Result\\"+str(profile[11].replace("/","")+"*"+ ID))[0]
         return folder
     def GetSubjectFiles(self, main_path):          
@@ -157,11 +152,11 @@ class Neurobit():
         self.SaveID()
         return glob.glob(self.GetFolderPath()+"\*.csv")
     def GetDxSql(self):
-        f   = open(os.path.join(self.main_path,'ID.txt'), 'r')
+        f   = open(os.path.join(self.main_path,'ID.ns'), 'r')
         ID  = f.readline().replace('\n','')
         con = sqlite3.connect(os.path.join(self.main_path,"NeurobitNS01-1.db"))
         cur = con.cursor()
-        cur.execute("SELECT * FROM Patient WHERE [ID]")
+        cur.execute("SELECT * FROM Patient WHERE [ID]='" + ID + "'")
 # =============================================================================
 #         cur.execute('select * from sqlite_master').fetchall()
 #         cur.execute('SELECT * FROM'+ID)
@@ -173,7 +168,7 @@ class Neurobit():
         ID, profile = self.GetDxSql()
         
         self.Task   = cmd_csv.Mode[0]
-        self.Date   = cmd_csv.Date[0].replace("/","")[:8]
+        self.Date   = cmd_csv.Datetime[0].replace("/","")[:8]
         self.ID     = cmd_csv.PatientID[0]        
         self.Doctor = cmd_csv.ExaminerID[0]
         self.Device = cmd_csv.Device[0]
@@ -181,15 +176,15 @@ class Neurobit():
         tmp = int(np.where(cmd_csv.ExaminerID == "X")[0]+1)
         if self.task == 'ACT':
             self.VoiceCommand = np.array(cmd_csv.ExaminerID[tmp:], dtype=float)
-            print("GET VoiceCommand")
+            #print("GET VoiceCommand")
         elif self.task == '9_Gaze':
             self.VoiceCommand = np.array([cmd_csv.ExaminerID[tmp:],cmd_csv.Device[tmp:]], dtype=float)
-            print("GET VoiceCommand")
+            #print("GET VoiceCommand")
         elif self.task == 'CUT':
             self.VoiceCommand = np.array(cmd_csv.ExaminerID[tmp:], dtype=float)
-            print("GET VoiceCommand")
+            #print("GET VoiceCommand")
         else:
-            print("Go to make "+self.task+" function!!!")
+            pass#print("Go to make "+self.task+" function!!!")
         
         self.Name   = str(profile[2]+","+profile[4])
         self.Gender = str(profile[6])
@@ -221,26 +216,28 @@ class Neurobit():
 # =============================================================================
         
         
-        for line in profile[8][2].split('\n'):
-            if "XT" in line:    self.XT_PD = str(''.join(c for c in line if c.isdigit()))
-            else:               self.XT_PD = str(0)
-            
-            if "ET" in line:    self.ET_PD = str(''.join(c for c in line if c.isdigit()))
-            else:               self.ET_PD = str(0)
-            
-            if "HT" in line:    self.HYPER = str(''.join(c for c in line if c.isdigit()))
-            else:               self.HYPER = str(0)
-            
-            if "HoT" in line:   self.HYPO = str(''.join(c for c in line if c.isdigit()))
-            else:               self.HYPO = str(0)            
+        #for line in profile[8][2].split('\n'):
+        #    if "xt" in line:    self.xt_pd = str(''.join(c for c in line if c.isdigit()))
+        #    else:               self.xt_pd = str(0)
+        #    
+        #    if "et" in line:    self.et_pd = str(''.join(c for c in line if c.isdigit()))
+        #    else:               self.et_pd = str(0)
+        #    
+        #    if "ht" in line:    self.hyper = str(''.join(c for c in line if c.isdigit()))
+        #    else:               self.hyper = str(0)
+        #    
+        #    if "hot" in line:   self.hypo = str(''.join(c for c in line if c.isdigit()))
+        #    else:               self.hypo = str(0)            
                     
     def GetEyePosition(self):
         cap = GetVideo(self.csv_path)
         ret, frame = cap.read()
         height = frame.shape[0]
         width = frame.shape[1]
-        eyes_origin = [[int(width/4-200),int(height/2)-100,375,200],
-                       [int(width/2+75),int(height/2)-100,375,200]]
+        #eyes_origin = [[int(width/4-200),int(height/2)-100,375,200],
+        #               [int(width/2+75),int(height/2)-100,375,200]]
+        eyes_origin = [[0,0,int(width/2),height],
+                        [int(width/2),0,int(width/2),height]]
         fourcc = cv2.VideoWriter_fourcc(*'MP42')
         out = cv2.VideoWriter(os.path.join(self.saveVideo_path,self.FileName+'.avi'),
                               fourcc, 25, (width,height))
@@ -264,14 +261,14 @@ class Neurobit():
                     OD.append([int(OD_p[0]),int(OD_p[1]), int(OD_p[2])])
                 else:
                     OD.append([np.nan,np.nan,np.nan])
-                    print("An OD exception occurred")
+                    #print("An OD exception occurred")
                 if (not np.isnan(OS_p).any() and 
                     eyes_origin[1][0]<OS_p[0]<eyes_origin[1][0]+eyes_origin[1][2] and 
                     eyes_origin[1][1]<OS_p[1]<eyes_origin[1][1]+eyes_origin[1][3]):
                     OS.append([int(OS_p[0]), int(OS_p[1]), int(OS_p[2])])
                 else:
                     OS.append([np.nan,np.nan,np.nan])
-                    print("An OS exception occurred")
+                    #print("An OS exception occurred")
                 DrawEyePosition(frame, eyes, OD[-1], OS[-1])
                 self.DrawTextVideo(frame, out, frame_cnt)
                 
@@ -286,10 +283,10 @@ class Neurobit():
                 
                 dOD = np.sum(np.abs(np.array(OD[-1])-OD_pre))
                 dOS = np.sum(np.abs(np.array(OS[-1])-OS_pre))
-                if np.logical_or(dOD>60, np.isnan(dOD)) and OD_cal_cnt <= 0:
+                if np.logical_or(dOD>30, np.isnan(dOD)) and OD_cal_cnt <= 0:
                     OD_cal_cnt = 60
                     eyes, OD_pre, OS_pre = get_eye_position(cap,eyes_origin)    
-                elif np.logical_or(dOS>60, np.isnan(dOS)) and OD_cal_cnt <= 0 and OS_cal_cnt <= 0:
+                elif np.logical_or(dOS>30, np.isnan(dOS)) and OD_cal_cnt <= 0 and OS_cal_cnt <= 0:
                     OS_cal_cnt = 60
                     eyes, OD_pre, OS_pre = get_eye_position(cap,eyes_origin) 
                 OD_cal_cnt-=1; OS_cal_cnt-=1
@@ -361,25 +358,6 @@ class Neurobit():
                 self.website =file['alternateLink']
         img = qrcode.make(self.website)
         img.save(os.path.join(self.saveImage_path,"QR_code.png"))
-    
-    def Calibration(self, path_image):
-        right_clicks = list()
-        path_image = "E:\\TSGH\\CoverUcover\\20200217 1289115\\162738_1289115_F.jpg"
-        img = cv2.imread(path_image,0)
-        scale_width = 640 / img.shape[1]
-        scale_height = 480 / img.shape[0]
-        scale = min(scale_width, scale_height)
-        window_width = int(img.shape[1] * scale)
-        window_height = int(img.shape[0] * scale)
-        cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('image', window_width, window_height)
-        
-        #set mouse callback function for window
-        cv2.setMouseCallback('image', mouse_callback)
-        
-        cv2.imshow('image', img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
         
 
 def GetMiddleLight(csv_path):
@@ -410,12 +388,12 @@ def GetMiddleLightEnvlop(guide):
         env_low = np.where(guide[:,0]<=np.nanpercentile(guide[:,0], 30))[0]
         i = 2
         while len(np.where(env_low>env_up[0])[0])/len(guide)<0.2:
-            print("Increase env_low sensitivity!: "+str(i+30))
+            #print("Increase env_low sensitivity!: "+str(i+30))
             env_low = np.where(guide[:,0]<=np.nanpercentile(guide[:,0], 30+i))[0]
             i+=2
         i = 2
         while len(np.where(env_up>env_low[0])[0])/len(guide)<0.2:
-            print("Increase env_up sensitivity!: "+str(30-i))
+            #print("Increase env_up sensitivity!: "+str(30-i))
             env_up = np.where(guide[:,0]<=np.nanpercentile(guide[:,0], 30-i))[0]
             i+=2
         return env_up, env_low 
@@ -563,7 +541,7 @@ class ACT_Task(Neurobit):
             OD_fix = np.append(trans_PD(self.AL_OD,OD_fix[0:2]), OD_fix[2])
             OS_fix = np.append(trans_PD(self.AL_OS,OS_fix[0:2]), OS_fix[2])
         except:
-            print("No profile")
+            pass#print("No profile")
         self.OD_fix = OD_fix        # one position in each ACT_TIME
         self.OS_fix = OS_fix
     def GetDiagnosis(self):
@@ -805,7 +783,7 @@ class ACT_Task(Neurobit):
                 ACT.append(ind[ind_pu[0]])
             except:
                 ACT.append(ACT[-1])
-                print("Not Detect "+ ACT_TIME[i]) 
+                #print("Not Detect "+ ACT_TIME[i]) 
         pic_cont = 1
         empt=0
         #fig = plt.figure(figsize=(11.7,8.3))
@@ -827,7 +805,7 @@ class ACT_Task(Neurobit):
                            int(self.OD_ACT[pic_cont-1][2]),
                            (255,255,255),2) 
             except:
-                print("OD Absent!")
+                pass#print("OD Absent!")
             try:
                 cv2.rectangle(im,
                               (int(self.OS_ACT[pic_cont-1][0]),int(self.OS_ACT[pic_cont-1][1])),
@@ -837,14 +815,17 @@ class ACT_Task(Neurobit):
                            int(self.OS_ACT[pic_cont-1][2]),
                            (255,255,255),2)
             except:
-                print("OS Absent!")
+                pass#print("OS Absent!")
             gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
             _,thresh_1 = cv2.threshold(gray,110,255,cv2.THRESH_TRUNC)
             exec('ax'+str(pic_cont)+'=plt.subplot(4, 1, pic_cont)')
             exec('ax'+str(pic_cont)+ '.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), "gray")')
             exec('ax'+str(pic_cont)+'.axes.xaxis.set_ticks([])')
             exec('ax'+str(pic_cont)+ '.axes.yaxis.set_ticks([])')
-            exec('ax'+str(pic_cont)+ '.set_ylim(int(3*height/4),int(height/4))')
+# =============================================================================
+#             exec('ax'+str(pic_cont)+ '.set_ylim(int(3*height/4),int(height/4))')
+# =============================================================================
+            exec('ax'+str(pic_cont)+ '.set_ylim(int(height),int(0))')
             exec('ax'+str(pic_cont)+ '.set_ylabel(ACT_LABEL[pic_cont-1])')
             plt.box(on=None)
             pic_cont+=1
@@ -913,9 +894,9 @@ class Gaze9_Task(Neurobit):
         #self.DrawQRCode() 
     def GetCommand(self):    
         self.GetProfile(self.csv_path)
-        if int(self.Date) >= 20210601:
-            stupid_bug = np.where(self.VoiceCommand[0,:] == self.VoiceCommand[0,0])[0]
-            self.VoiceCommand[:,stupid_bug] = 0
+        #if int(self.Date) >= 20210601:
+        #    stupid_bug = np.where(self.VoiceCommand[0,:] == self.VoiceCommand[0,0])[0]
+        #    self.VoiceCommand[:,stupid_bug] = 0
     
         x = np.round(self.VoiceCommand[0,:],2); y = np.round(self.VoiceCommand[1,:],2); self.CmdTime = dict()
         
@@ -927,15 +908,15 @@ class Gaze9_Task(Neurobit):
         y_q2 = np.unique(y)[1]
         y_q3 = np.unique(y)[-1]
         
-        D = np.where(np.logical_and(np.logical_and(x < x_q3, x > x_q1), y == y_q3))[0]#[60:]
+        D = np.where(np.logical_and(np.logical_and(x < x_q3, x > x_q1), y == y_q1))[0]#[60:]
         F = np.where(np.logical_and(np.logical_and(x < x_q3, x > x_q1), np.logical_and(y < y_q3, y > y_q1)))[0]#[60:]
         L = np.where(np.logical_and(np.logical_and(x == x_q1, y < y_q3), y > y_q1))[0]#[60:]
-        LD = np.where(np.logical_and(x == x_q1, y == y_q3))[0]#[60:]
-        LU = np.where(np.logical_and(x == x_q1, y == y_q1))[0]#[60:]
+        LD = np.where(np.logical_and(x == x_q1, y == y_q1))[0]#[60:]
+        LU = np.where(np.logical_and(x == x_q1, y == y_q3))[0]#[60:]
         R = np.where(np.logical_and(np.logical_and(x == x_q3 ,  y < y_q3), y > y_q1))[0]#[60:]
-        RD = np.where(np.logical_and(x == x_q3, y == y_q3))[0]#[60:]
-        RU = np.where(np.logical_and(x == x_q3, y == y_q1))[0]#[60:]
-        U = np.where(np.logical_and(np.logical_and(x < x_q3, x > x_q1), y == y_q1))[0]#[60:]
+        RD = np.where(np.logical_and(x == x_q3, y == y_q1))[0]#[60:]
+        RU = np.where(np.logical_and(x == x_q3, y == y_q3))[0]#[60:]
+        U = np.where(np.logical_and(np.logical_and(x < x_q3, x > x_q1), y == y_q3))[0]#[60:]
         
         for i in range(0,len(GAZE_9_TIME)):
             exec('self.CmdTime[GAZE_9_TIME[i]] = '+ GAZE_9_TIME[i])
@@ -1178,7 +1159,7 @@ class Gaze9_Task(Neurobit):
                                int(self.Gaze_9_OD[pic_cont][2]),
                                (255,255,255),2) 
                 except:
-                    print("OD Absent!")
+                    pass#print("OD Absent!")
                 try:
                     cv2.rectangle(im,
                                   (int(self.Gaze_9_OS[pic_cont][0]),int(self.Gaze_9_OS[pic_cont][1])),
@@ -1188,7 +1169,7 @@ class Gaze9_Task(Neurobit):
                                int(self.Gaze_9_OS[pic_cont][2]),
                                (255,255,255),2)
                 except:
-                    print("OS Absent!")
+                    pass#print("OS Absent!")
                 gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
                 _,thresh_1 = cv2.threshold(gray,110,255,cv2.THRESH_TRUNC)
                 
@@ -1196,7 +1177,10 @@ class Gaze9_Task(Neurobit):
                 exec('ax'+str(pic_cont+1)+ '.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), "gray")')
                 exec('ax'+str(pic_cont+1)+'.axes.xaxis.set_ticks([])')
                 exec('ax'+str(pic_cont+1)+ '.axes.yaxis.set_ticks([])')
-                exec('ax'+str(pic_cont+1)+ '.set_ylim(int(3*height/4),int(height/4))')
+# =============================================================================
+#             exec('ax'+str(pic_cont)+ '.set_ylim(int(3*height/4),int(height/4))')
+# =============================================================================
+                exec('ax'+str(pic_cont+1)+ '.set_ylim(int(height),int(0))')
                 exec('ax'+str(pic_cont+1)+ '.set_ylabel(GAZE_9_TIME[pic_cont])')
                 plt.box(on=None)
             pic_cont+=1
@@ -1395,7 +1379,7 @@ class CUT_Task(Neurobit):
             OS_phoria = np.append(trans_PD(self.AL_OD,OS_phoria[0:2]), OS_phoria[2])
             OD_phoria = np.append(trans_PD(self.AL_OS,OD_phoria[0:2]), OD_phoria[2])
         except:
-            print("No profile")
+            pass#print("No profile")
         self.OD_fix = OD_fix        # one position in each CUT_TIME
         self.OS_fix = OS_fix
         self.OD_phoria = OD_phoria        # one position in each CUT_TIME
@@ -1559,7 +1543,7 @@ class CUT_Task(Neurobit):
             
             plt.xlabel("Time (s)")
             plt.ylabel("Eye Position (PD)")
-            plt.title("Alternated Cover Test "+ EYE[i])
+            plt.title("Cover Uncover Test "+ EYE[i])
             
             plt.grid(True, linestyle=':')
             plt.xticks(fontsize= 8)
@@ -1600,7 +1584,7 @@ class CUT_Task(Neurobit):
                 ACT.append(ind[ind_pu[0]])
             except:
                 ACT.append(ACT[-1])
-                print("Not Detect "+ CUT_TIME[i]) 
+                #print("Not Detect "+ CUT_TIME[i]) 
         pic_cont = 1
         empt=0
         #fig = plt.figure(figsize=(11.7,8.3))
@@ -1622,7 +1606,7 @@ class CUT_Task(Neurobit):
                            int(self.OD_ACT[pic_cont-1][2]),
                            (255,255,255),2) 
             except:
-                print("OD Absent!")
+                pass#print("OD Absent!")
             try:
                 cv2.rectangle(im,
                               (int(self.OS_ACT[pic_cont-1][0]),int(self.OS_ACT[pic_cont-1][1])),
@@ -1632,14 +1616,17 @@ class CUT_Task(Neurobit):
                            int(self.OS_ACT[pic_cont-1][2]),
                            (255,255,255),2)
             except:
-                print("OS Absent!")
+                pass#print("OS Absent!")
             gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
             _,thresh_1 = cv2.threshold(gray,110,255,cv2.THRESH_TRUNC)
             exec('ax'+str(pic_cont)+'=plt.subplot(5, 1, pic_cont)')
             exec('ax'+str(pic_cont)+ '.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), "gray")')
             exec('ax'+str(pic_cont)+'.axes.xaxis.set_ticks([])')
             exec('ax'+str(pic_cont)+ '.axes.yaxis.set_ticks([])')
-            exec('ax'+str(pic_cont)+ '.set_ylim(int(3*height/4),int(height/4))')
+# =============================================================================
+#             exec('ax'+str(pic_cont)+ '.set_ylim(int(3*height/4),int(height/4))')
+# =============================================================================
+            exec('ax'+str(pic_cont)+ '.set_ylim(int(height),int(0))')
             exec('ax'+str(pic_cont)+ '.set_ylabel(CUT_LABEL[pic_cont-1])')
             plt.box(on=None)
             pic_cont+=1

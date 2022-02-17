@@ -20,8 +20,9 @@ def get_eclipse_param_pupil(params):
     params.minThreshold = 65
     params.maxThreshold = 93
     params.blobColor = 225
-    params.minArea = 150
-    params.maxArea = 6000
+    #params.minArea = 150
+    params.minArea = 600
+    params.maxArea = 12000
     params.filterByCircularity = False
     params.filterByConvexity = True
     params.minConvexity = 0.5
@@ -89,7 +90,7 @@ def capture_eye_pupil(frame,eyes):
     for (ex,ey,ew,eh) in eyes:  
         roi_color2 = frame[ey:ey+eh, ex:ex+ew]   
         gray = cv2.cvtColor(roi_color2, cv2.COLOR_BGR2GRAY)        
-        gray = modify_contrast_and_brightness2(gray)
+        #gray = modify_contrast_and_brightness2(gray)
         gray = cv2.medianBlur(gray,15)         
         (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray)        
 # =============================================================================
@@ -107,7 +108,7 @@ def capture_eye_pupil(frame,eyes):
         pre_thr_yU = gray[kernal]
         i = 0; dxL = 0; dxR = 0; dyD = 0; dyU = 0
         STOP_L = False; STOP_R = False; STOP_D = False; STOP_U = False;
-        while i <= 75:
+        while i <= 25:
             x_2L = kernal[0]+dxL
             x_2R = kernal[0]-dxR
             y_2D = kernal[1]+dyD
@@ -124,16 +125,16 @@ def capture_eye_pupil(frame,eyes):
                     thr = np.mean([pre_thr_xL,pre_thr_xR,pre_thr_yD,pre_thr_yU])
                     break
                 
-                if not (thr_xL-pre_thr_xL>15 or thr_xL>90) and not STOP_L: dxL = i+2
+                if not (thr_xL-pre_thr_xL>15 or thr_xL>90) and not STOP_L: dxL = i+6
                 else: STOP_L = True
                 
-                if not (thr_xR-pre_thr_xR>15 or thr_xR>90) and not STOP_R: dxR = i+2
+                if not (thr_xR-pre_thr_xR>15 or thr_xR>90) and not STOP_R: dxR = i+6
                 else: STOP_R = True
                 
-                if not (thr_yD-pre_thr_yD>15 or thr_yD>90) and not STOP_D: dyD = i+2
+                if not (thr_yD-pre_thr_yD>15 or thr_yD>90) and not STOP_D: dyD = i+6
                 else: STOP_D = True
                 
-                if not (thr_yU-pre_thr_yU>15 or thr_yU>90) and not STOP_U: dyU = i+2
+                if not (thr_yU-pre_thr_yU>15 or thr_yU>90) and not STOP_U: dyU = i+6
                 else: STOP_U = True
                 
                 if thr_xL > pre_thr_xL and thr_xL < 90: pre_thr_xL = thr_xL
@@ -144,7 +145,7 @@ def capture_eye_pupil(frame,eyes):
             except:
                 thr = np.mean([pre_thr_xL,pre_thr_xR,pre_thr_yD,pre_thr_yU])
                 break
-            i+=2
+            i+=6
             
             
             
@@ -152,11 +153,9 @@ def capture_eye_pupil(frame,eyes):
         if thr>=180: thr = 90
         while not GET_CIRCLE and thr<180:            
             _,roi_gray1 = cv2.threshold(gray,thr,255,0)
-# =============================================================================
-#             cv2.imshow('gray',gray) 
-#             cv2.imshow('roi_gray1',roi_gray1) 
-#             cv2.waitKey(1) 
-# =============================================================================
+            #cv2.imshow('gray',gray) 
+            #cv2.imshow('roi_gray1',roi_gray1) 
+            #cv2.waitKey(1) 
             #print(thr)
             params_p = cv2.SimpleBlobDetector_Params()
             params_p = get_eclipse_param_pupil(params_p)
@@ -230,9 +229,9 @@ def capture_eye_iris(frame,eyes):
 
         while not GET_CIRCLE and thr<180:            
             _,roi_gray1 = cv2.threshold(gray,thr,thr,cv2.THRESH_BINARY_INV)
-            cv2.imshow('gray',gray) 
-            cv2.imshow('roi_gray1',roi_gray1) 
-            cv2.waitKey(1) 
+            #cv2.imshow('gray',gray) 
+            #cv2.imshow('roi_gray1',roi_gray1) 
+            #cv2.waitKey(1) 
             #print(thr)
             params_p = cv2.SimpleBlobDetector_Params()
             params_p = get_eclipse_param_iris(params_p)
@@ -293,8 +292,8 @@ def get_eye_position(cap,eyes):
         OS_eye = np.nanpercentile(OS,50,axis = 0)
     else:
         OS_eye = [eyes[1][0], eyes[1][1], 0]
-    eyes = [[int(OD_eye[0]-100),int(OD_eye[1]-75),200,150],
-            [int(OS_eye[0]-100),int(OS_eye[1]-75),200,150]]      
+    eyes = [[int(OD_eye[0]-200),int(OD_eye[1]-150),400,300],
+            [int(OS_eye[0]-200),int(OS_eye[1]-150),400,300]]      
     return np.abs(eyes), OD_eye, OS_eye
 
 #cap = GetVideo(ACT_Task.csv_path)

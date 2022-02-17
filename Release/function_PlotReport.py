@@ -33,10 +33,16 @@ T_MARGIN = 30
 B_MARGIN = 18
 P_MARGIN = 10
 
+# color map
+line_color_palatte = {'greens':["#A5F5B3", "#51F46D",   "#00F62B", "#008D19", "#004D0D"], # pale / mid / base / dark / black              
+                      'oranges':["#FFD6AC", "#FFAC54", "#FF8300", "#B95F00", "#653400"],             
+                      'reds':["#FFB2AC", "#FF6154", "#FF1300", "#B90D00", "#650700"],                 
+                      'blues':["#A4DCEF", "#54C8EE", "#03B5F0", "#015773", "#012F3F"]}
+
 def main_head(headtext):
     Style=getSampleStyleSheet()
     bt = Style['Normal']    #字體的樣式
-    bt.fontName='Arial_bold'     #使用的字體
+    bt.fontName='Helvetica-Bold'     #使用的字體
     bt.fontSize=18          #字號
     bt.wordWrap = 'Normal'     #該屬性支持自動換行，'CJK'是中文模式換行，用於英文中會截斷單詞造成閱讀困難，可改爲'Normal'
     bt.spaceAfter= 16
@@ -45,7 +51,7 @@ def main_head(headtext):
 def sub_head(headtext):
     Style=getSampleStyleSheet()
     bt = Style['Normal']    #字體的樣式
-    bt.fontName='Arial_bold'     #使用的字體
+    bt.fontName='Helvetica-Bold'     #使用的字體
     bt.fontSize=14          #字號
     bt.wordWrap = 'Normal'     #該屬性支持自動換行，'CJK'是中文模式換行，用於英文中會截斷單詞造成閱讀困難，可改爲'Normal'
     bt.spaceBefore= 10
@@ -55,7 +61,7 @@ def sub_head(headtext):
 def con_text(headtext):
     Style=getSampleStyleSheet()
     bt = Style['Normal']    #字體的樣式
-    bt.fontName='Arial_bold'     #使用的字體
+    bt.fontName='Helvetica-Bold'     #使用的字體
     bt.fontSize=10         #字號
     bt.wordWrap = 'Normal'     #該屬性支持自動換行，'CJK'是中文模式換行，用於英文中會截斷單詞造成閱讀困難，可改爲'Normal'
     bt.spaceBefore= 10
@@ -64,7 +70,7 @@ def con_text(headtext):
     
 def subject_table(Subject):
     if Subject.ID:
-        data = [['Patient ID: ' + Subject.ID,       'Date of Birth: ' + Subject.DoB,    'Exam Date: ' + Subject.Date,   'Examiner: ' + Subject.Doctor],
+        data = [['Patient ID: ' + Subject.ID,       'Date of Birth: ' + Subject.DoB,    'Exam Date: ' + Subject.Date,   'Examiner ID: ' + Subject.Doctor],
                 ['Patient Name: ' + Subject.Name,   'Sex: ' + Subject.Gender,        'Age: ' + Subject.Age,          'Height: ' + str(Subject.Height)]
         ]   
     else:
@@ -75,7 +81,7 @@ def subject_table(Subject):
     for x in data:
         dis_list.append(x)
     style = [
-        ('FONTNAME', (0, 0), (-1, -1), 'Arial'),    # 字體
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),    # 字體
         ('FONTNAME', (0, 1), (0, 1), 'TSans'),    # 字體
         ('FONTSIZE', (0, 0), (-1, 0), 10),          # 字體大小
         
@@ -105,7 +111,7 @@ def clinic_table(Subject):
     for x in data:
         dis_list.append(x)
     style = [
-        ('FONTNAME', (0, 0), (-1, -1), 'Arial'),    # 字體
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),    # 字體
         ('FONTSIZE', (0, 0), (-1, 0), 10),          # 字體大小
         
         ('ALIGN', (0, 0), (-1, 0), 'LEFT'),        # 對齊
@@ -134,7 +140,7 @@ def diagnose_table(OLD_ACT_Task):
     for x in data:
         dis_list.append(x)
     style = [
-        ('FONTNAME', (0, 0), (-1, -1), 'Arial'),    # 字體
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),    # 字體
         ('FONTSIZE', (0, 0), (-1, -1), 10),          # 字體大小
         
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),        # 對齊
@@ -182,7 +188,7 @@ def quality_bar(OD, OS, Task):
         OS_color = colors.red
         
     style = [
-        ('FONTNAME', (0, 0), (-1, -1), 'Arial'),    # 字體
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),    # 字體
         ('FONTSIZE', (0, 0), (-1, -1), 8),          # 字體大小
         
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),        # 對齊
@@ -333,6 +339,8 @@ def Gaze9Report(Element, Gaze9_Session):
     Dev_V = Gaze9_Session.NeurobitDxDev_V
     Diff_H = Dev_H[:,0]-Dev_H[:,1]
     Diff_V = Dev_V[:,0]-Dev_V[:,1]
+    Gaze9_Session.Diff_H = Diff_H
+    Gaze9_Session.Diff_V = Diff_V
     data = [
         ["9 Gaze",  "OD ("+chr(176)+")",   "",        "OS ("+chr(176)+")",  "",     "OD-OS ("+chr(176)+")",    ""],
         ["",        "H",        "V",        "H",        "V",    "H",            "V"],
@@ -350,7 +358,7 @@ def Gaze9Report(Element, Gaze9_Session):
     for x in data:
         dis_list.append(x)
     style = [
-        ('FONTNAME', (0, 0), (-1, -1), 'Arial'),    # 字體
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),    # 字體
         ('FONTSIZE', (0, 0), (-1, -1), 8),          # 字體大小
         ('TEXTCOLOR', (0, 0), (0, -1), colors.white),          # 字體顏色
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),          # 字體顏色
