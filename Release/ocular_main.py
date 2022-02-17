@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd 
 import Neurobit_Lib
 import subprocess
+import shutil
 from datetime import datetime
 from reportlab.platypus import BaseDocTemplate, Image, Paragraph, Table, TableStyle, PageBreak, \
     Frame, PageTemplate, NextPageTemplate,Spacer
@@ -161,3 +162,7 @@ if __name__== '__main__':
         """', '""" + str(np.round(Gaze9_Task.Diff_H[6],1)) + """', '""" + str(np.round(Gaze9_Task.Diff_V[6],1)) + """', '""" + str(np.round(Gaze9_Task.Diff_H[7],1)) + """', '""" + str(np.round(Gaze9_Task.Diff_V[7],1)) + 
         """', '""" + str(np.round(Gaze9_Task.Diff_H[8],1)) + """', '""" + str(np.round(Gaze9_Task.Diff_V[8],1)) + """')""")
         con.commit()
+        
+        if IsACT_Task:      shutil.rmtree(ACT_Task.save_MainPath+"\\"+ACT_Task.task)
+        if IsCUT_Task:      shutil.rmtree(CUT_Task.save_MainPath+"\\"+CUT_Task.task)
+        if IsGaze9_Task:    shutil.rmtree(Gaze9_Task.save_MainPath+"\\"+Gaze9_Task.task)

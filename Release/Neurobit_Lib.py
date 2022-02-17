@@ -299,15 +299,6 @@ class Neurobit():
         cv2.destroyAllWindows()
         self.OD = np.array(OD).transpose()
         self.OS = np.array(OS).transpose()
-        EyePositionCsv = pd.DataFrame({"OD_x":self.OD[0,:],
-                                       "OD_y":self.OD[1,:],
-                                       "OD_p":self.OD[2,:],
-                                       "OS_x":self.OS[0,:],
-                                       "OS_y":self.OS[1,:],
-                                       "OS_p":self.OS[2,:],
-                                       "OD_thr":np.array(thr_eyes)[:,0],
-                                       "OS_thr":np.array(thr_eyes)[:,1]})     
-        EyePositionCsv.to_excel(os.path.join(self.saveReport_path,self.task+"_EyePositionCsv.xlsx")) 
     def MergeFile(self):
         if len(self.session)>1:
             csv_1 = pd.read_csv(self.session[0], dtype=object)
@@ -406,7 +397,7 @@ class ACT_Task(Neurobit):
         self.FolderName = csv_path.split('\\')[-2]
         self.FileName = csv_path.split('\\')[-1].replace(".csv","")
         self.main_path = csv_path.replace("\\"+csv_path.split('\\')[-2],"").replace("\\"+csv_path.split('\\')[-1],"")
-        self.save_MainPath = self.main_path+"\\Version"+self.version+"\\"+self.FolderName
+        self.save_MainPath = self.main_path+"\\"+self.FolderName
         self.saveReport_path = self.save_MainPath
         self.saveVideo_path = self.save_MainPath+"\\"+self.task+"\\HoughCircle"
         self.saveImage_path = self.save_MainPath+"\\"+self.task+"\\Image"              
@@ -867,7 +858,7 @@ class Gaze9_Task(Neurobit):
         self.FolderName = csv_path.split('\\')[-2]
         self.FileName = csv_path.split('\\')[-1].replace(".csv","")
         self.main_path = csv_path.replace("\\"+csv_path.split('\\')[-2],"").replace("\\"+csv_path.split('\\')[-1],"")
-        self.save_MainPath = self.main_path+"\\Version"+self.version+"\\"+self.FolderName
+        self.save_MainPath = self.main_path+"\\"+self.FolderName
         self.saveReport_path = self.save_MainPath
         self.saveVideo_path = self.save_MainPath+"\\"+self.task+"\\HoughCircle"
         self.saveImage_path = self.save_MainPath+"\\"+self.task+"\\Image"              
@@ -1235,7 +1226,7 @@ class CUT_Task(Neurobit):
         self.FolderName = csv_path.split('\\')[-2]
         self.FileName = csv_path.split('\\')[-1].replace(".csv","")
         self.main_path = csv_path.replace("\\"+csv_path.split('\\')[-2],"").replace("\\"+csv_path.split('\\')[-1],"")
-        self.save_MainPath = os.getcwd()+"\\RESULT\\Version"+self.version+"\\"+self.FolderName
+        self.save_MainPath = self.main_path+"\\"+self.FolderName
         self.saveReport_path = self.save_MainPath
         self.saveVideo_path = self.save_MainPath+"\\"+self.task+"\\HoughCircle"
         self.saveImage_path = self.save_MainPath+"\\"+self.task+"\\Image"              
