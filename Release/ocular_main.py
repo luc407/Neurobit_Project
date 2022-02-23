@@ -85,14 +85,16 @@ if __name__== '__main__':
     if IsGaze9_Task:
         Gaze9_Task.showVideo = False
         Gaze9_Task.MergeFile()
-        try: Gaze9_Task.Exec(ACT_Task)   
-        except: Gaze9_Task.Exec()
+        if IsACT_Task: Gaze9_Task.Exec(ACT_Task)   
+        else: Gaze9_Task.Exec()
     else:
         Gaze9_Task = Neurobit_Lib.Gaze9_Task(csv_path)  
         Gaze9_Task.miss_OD = np.nan
         Gaze9_Task.miss_OS = np.nan
         Gaze9_Task.NeurobitDxDev_H = np.empty([9,2])*np.nan
         Gaze9_Task.NeurobitDxDev_V = np.empty([9,2])*np.nan
+        Gaze9_Task.Diff_H = np.empty([9,2])*np.nan
+        Gaze9_Task.Diff_V = np.empty([9,2])*np.nan
         
     """Plot Report"""    
     PDF_Header = sub_head("NeuroSpeed")
@@ -169,6 +171,9 @@ if __name__== '__main__':
         """', '""" + str(np.round(Gaze9_Task.Diff_H[8],1)) + """', '""" + str(np.round(Gaze9_Task.Diff_V[8],1)) + """')""")
         con.commit()
         
-        if IsACT_Task:      shutil.rmtree(ACT_Task.save_MainPath+"\\"+ACT_Task.task)
-        if IsCUT_Task:      shutil.rmtree(CUT_Task.save_MainPath+"\\"+CUT_Task.task)
-        if IsGaze9_Task:    shutil.rmtree(Gaze9_Task.save_MainPath+"\\"+Gaze9_Task.task)
+        try: shutil.rmtree(ACT_Task.save_MainPath+"\\"+ACT_Task.task)
+        except: pass
+        try: shutil.rmtree(CUT_Task.save_MainPath+"\\"+CUT_Task.task)
+        except: pass
+        try: shutil.rmtree(Gaze9_Task.save_MainPath+"\\"+Gaze9_Task.task)
+        except: pass

@@ -85,14 +85,18 @@ def createEyeMask(eyeLandmarks, im):
 
 def capture_eye_pupil(frame,eyes):
     OD_p = []; OS_p = []; thr_eyes = []
+    params_p = cv2.SimpleBlobDetector_Params()
+    params_p = get_eclipse_param_pupil(params_p)
        
     #frame = cv2.inpaint(frame,frame_blr,3,cv2.INPAINT_TELEA)
     for (ex,ey,ew,eh) in eyes:  
         roi_color2 = frame[ey:ey+eh, ex:ex+ew]   
-        gray = cv2.cvtColor(roi_color2, cv2.COLOR_BGR2GRAY)        
+        gray = cv2.cvtColor(roi_color2, cv2.COLOR_BGR2GRAY) 
+        
         #gray = modify_contrast_and_brightness2(gray)
-        gray = cv2.medianBlur(gray,15)         
-        (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray)        
+        gray = cv2.GaussianBlur(gray, (15, 15), 0)
+        (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray) 
+        
 # =============================================================================
 #         cv2.destroyAllWindows()
 # =============================================================================
@@ -120,23 +124,22 @@ def capture_eye_pupil(frame,eyes):
                            gray_D[peaks_D[0]]]))+5
         except:
             thr = 45
-
-        while not GET_CIRCLE and thr<180:            
+        cnt = 0
+        while not GET_CIRCLE and cnt<10:            
             _,roi_gray1 = cv2.threshold(gray,thr,255,0)
 # =============================================================================
 #             cv2.imshow('gray',gray) 
 #             cv2.imshow('roi_gray1',roi_gray1) 
 #             cv2.waitKey(1) 
 #             print(thr)
-# =============================================================================
-            params_p = cv2.SimpleBlobDetector_Params()
-            params_p = get_eclipse_param_pupil(params_p)
-            det = cv2.SimpleBlobDetector_create(params_p)
-            circles = det.detect(roi_gray1)            
+# =============================================================================            
+            det = cv2.SimpleBlobDetector_create(params_p)            
+            circles = det.detect(roi_gray1)                        
             OD_pre_size = 0; OS_pre_size = 0; OD_ds_pre = 1000; OS_ds_pre = 1000;
+            
             if len(circles)>0:  
                 GET_CIRCLE = True
-                for kp in circles:
+                for kp in circles:                    
                     distance = np.linalg.norm(np.array(kernal)-np.array([kp.pt[0],kp.pt[1]]))
                     #print('distance: '+str(distance))
                     if ew>=274:
@@ -158,15 +161,14 @@ def capture_eye_pupil(frame,eyes):
                             if distance>35:
                                 OS_p = [int(kernal[0]+eyes[1][0]), int(kernal[1]+eyes[1][1]), int(kp.size/2)]                
                             else:
-                                OS_p = [int(kp.pt[0]+eyes[1][0]), int(kp.pt[1]+eyes[1][1]), int(kp.size/2)]                
+                                OS_p = [int(kp.pt[0]+eyes[1][0]), int(kp.pt[1]+eyes[1][1]), int(kp.size/2)]             
             else:
-                thr += 2
+                thr += 5; cnt+=1
                 if ex == eyes[0][0]:
                     OD_p=[np.nan,np.nan,np.nan]
                 elif ex == eyes[1][0]:
                     OS_p=[np.nan,np.nan,np.nan]
-        thr_eyes.append(thr)
-    return np.array(OD_p),np.array(OS_p),np.array(thr_eyes)
+    return np.array(OD_p),np.array(OS_p)
 
 def capture_eye_iris(frame,eyes):
     OD_p = []; OS_p = []; thr_eyes = []

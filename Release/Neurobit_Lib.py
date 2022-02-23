@@ -234,8 +234,6 @@ class Neurobit():
         ret, frame = cap.read()
         height = frame.shape[0]
         width = frame.shape[1]
-        #eyes_origin = [[int(width/4-200),int(height/2)-100,375,200],
-        #               [int(width/2+75),int(height/2)-100,375,200]]
         eyes_origin = [[0,0,int(width/2),height],
                         [int(width/2),0,int(width/2),height]]
         fourcc = cv2.VideoWriter_fourcc(*'MP42')
@@ -246,16 +244,12 @@ class Neurobit():
         OD = []; OS = []; thr_eyes = [] 
         frame_cnt = 0; OD_cal_cnt = 0; OS_cal_cnt = 0
         pbar = tqdm(total=int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))
+        cap = GetVideo(self.csv_path)
         while(cap.isOpened()):
-            cap = GetVideo(self.csv_path)
-            cap.set(1,frame_cnt)
             ret, frame = cap.read()
             if ret == True:
-                frame_cnt+=1                                
-                OD_p,OS_p,thr = capture_eye_pupil(frame,eyes_origin)
-                #print(OD_p)
-                #print(OS_p)
-                thr_eyes.append(thr)
+                frame_cnt+=1                                             
+                OD_p,OS_p = capture_eye_pupil(frame,eyes_origin)
                 if (not np.isnan(OD_p).any() and 
                     eyes_origin[0][0]<OD_p[0]<eyes_origin[0][0]+eyes_origin[0][2] and 
                     eyes_origin[0][1]<OD_p[1]<eyes_origin[0][1]+eyes_origin[0][3]):
@@ -274,30 +268,17 @@ class Neurobit():
                 
                 if self.showVideo:
                     DrawEyePosition(frame, eyes_origin, OD[-1], OS[-1])
-                    self.DrawTextVideo(frame, out, frame_cnt)
+                    self.DrawTextVideo(frame, frame_cnt)
                     
                     for (ex,ey,ew,eh) in eyes_origin:    
                         cv2.rectangle(frame,(ex,ey),(ex+ew,ey+eh),(255,0,0),2)
                         
                     out.write(frame)
                     cv2.imshow('frame',frame) 
-                    cv2.waitKey(1) 
-                
-# =============================================================================
-#                 dOD = np.sum(np.abs(np.array(OD[-1])-OD_pre))
-#                 dOS = np.sum(np.abs(np.array(OS[-1])-OS_pre))
-#                 if np.logical_or(dOD>30, np.isnan(dOD)) and OD_cal_cnt <= 0:
-#                     OD_cal_cnt = 60
-#                     eyes, OD_pre, OS_pre = get_eye_position(cap,eyes_origin)    
-#                 elif np.logical_or(dOS>30, np.isnan(dOS)) and OD_cal_cnt <= 0 and OS_cal_cnt <= 0:
-#                     OS_cal_cnt = 60
-#                     eyes, OD_pre, OS_pre = get_eye_position(cap,eyes_origin) 
-#                 OD_cal_cnt-=1; OS_cal_cnt-=1
-# =============================================================================
-                
+                    cv2.waitKey(1)  
             else:
                 break    
-            time.sleep(0.01)
+            time.sleep(0.0001)
             pbar.update(1)      
         if self.showVideo:
             out.release()
@@ -720,7 +701,7 @@ class ACT_Task(Neurobit):
         time = np.array(range(0,len(OD[0])))/25
         fig = plt.gcf()
         fig.set_size_inches(7.2,2.5, forward=True)
-        fig.set_dpi(200)              
+        fig.set_dpi(300)              
         for i in range(0,len(EYE)):
             if EYE[i] == 'OD':
                 x_diff = self.OD_ACT[0,0]-OD[0,:]
@@ -785,7 +766,7 @@ class ACT_Task(Neurobit):
         #fig = plt.figure(figsize=(11.7,8.3))
         fig = plt.gcf()
         fig.set_size_inches(3,4.4, forward=True)
-        fig.set_dpi(200)
+        fig.set_dpi(300)
         for pic in ACT:
             cap = GetVideo(self.csv_path)
             cap.set(1,pic)
@@ -827,7 +808,7 @@ class ACT_Task(Neurobit):
             pic_cont+=1
         plt.tight_layout()
         plt.savefig(os.path.join(self.saveImage_path,"DrawEyeFig.png"))
-    def DrawTextVideo(self, frame, out, frame_cnt):
+    def DrawTextVideo(self, frame, frame_cnt):
         width = frame.shape[1]
         for i in range(0,len(ACT_TIME)):
             if frame_cnt in self.CmdTime[ACT_TIME[i]]:
@@ -876,7 +857,9 @@ class Gaze9_Task(Neurobit):
     def Exec(self,*args):
         Finished_ACT = False
         for arg in args:
-            if arg: Finished_ACT = True; ACT_Task = arg
+            if arg: 
+                Finished_ACT = True
+                ACT_Task = arg
         self.GetCommand()        
         self.GetEyePosition()
         self.SeperateSession()                
@@ -1066,7 +1049,7 @@ class Gaze9_Task(Neurobit):
                 self.CmdTime[GAZE_9_TIME[i]] = list_temp
             else:
                 self.CmdTime[GAZE_9_TIME[i]] = temp
-    def DrawTextVideo(self, frame, out, frame_cnt):
+    def DrawTextVideo(self, frame, frame_cnt):
         width = frame.shape[1]      
         for i in range(0,len(GAZE_9_TIME)):
             if frame_cnt in self.CmdTime[GAZE_9_TIME[i]]:
@@ -1082,7 +1065,7 @@ class Gaze9_Task(Neurobit):
         time = np.array(range(0,len(OD[0])))/25
         fig = plt.gcf()
         fig.set_size_inches(7.2,2.5, forward=True)
-        fig.set_dpi(200)              
+        fig.set_dpi(300)              
         for i in range(0,len(EYE)):
             if EYE[i] == 'OD':
                 x_diff = self.Gaze_9_OD[1][0]-OD[0,:]
@@ -1138,7 +1121,7 @@ class Gaze9_Task(Neurobit):
         empt=0
         fig = plt.gcf()
         fig.set_size_inches(7.2,2.5, forward=True)
-        fig.set_dpi(200)
+        fig.set_dpi(300)
         for pic in Gaze_9:
             if not np.isnan(pic):
                 cap = GetVideo(self.csv_path)
@@ -1189,7 +1172,7 @@ class Gaze9_Task(Neurobit):
         MIN = -50; MAX = 50
         fig = plt.gcf()
         fig.set_size_inches(6/1.2,3/1.2, forward=True)
-        fig.set_dpi(200)
+        fig.set_dpi(300)
         cir_size = 25
         try:
             diff_V = np.round(math.degrees(math.atan(abs(170-self.Height)/220)),2)
@@ -1521,7 +1504,7 @@ class CUT_Task(Neurobit):
         time = np.array(range(0,len(OD[0])))/25
         fig = plt.gcf()
         fig.set_size_inches(7.2,2.5, forward=True)
-        fig.set_dpi(200)              
+        fig.set_dpi(300)              
         for i in range(0,len(EYE)):
             if EYE[i] == 'OD':
                 x_diff = self.OD_ACT[0,0]-OD[0,:]
@@ -1586,7 +1569,7 @@ class CUT_Task(Neurobit):
         #fig = plt.figure(figsize=(11.7,8.3))
         fig = plt.gcf()
         fig.set_size_inches(3,5, forward=True)
-        fig.set_dpi(200)
+        fig.set_dpi(300)
         for pic in ACT:
             cap = GetVideo(self.csv_path)
             cap.set(1,pic)
@@ -1628,7 +1611,7 @@ class CUT_Task(Neurobit):
             pic_cont+=1
         plt.tight_layout()
         plt.savefig(os.path.join(self.saveImage_path,"DrawEyeFig.png"))
-    def DrawTextVideo(self, frame, out, frame_cnt):
+    def DrawTextVideo(self, frame, frame_cnt):
         width = frame.shape[1]
         for i in range(0,len(CUT_TIME)):
             if frame_cnt in self.CmdTime[CUT_TIME[i]]:
