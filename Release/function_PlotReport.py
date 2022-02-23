@@ -255,8 +255,8 @@ def CreatePDF(file_path):
     return can
 def ACTReport(Element, ACT_Task):
     sub_head2 = sub_head("ACT Dynamic Eyeposition Tracking")
-    sub_head3 = sub_head("Ocular Alignment Table")
-    text1 = con_text("Alternated Cover Test Sequence in Primary Position")
+    sub_head3 = sub_head("Ocular Alignment -- Alternated Cover Test Sequence in Primary Position")
+    #text1 = con_text("Alternated Cover Test Sequence in Primary Position")
     Quality_Bar = quality_bar(ACT_Task.OD, ACT_Task.OS, ACT_Task)
     gaze_table = diagnose_table(ACT_Task)
     
@@ -265,7 +265,7 @@ def ACTReport(Element, ACT_Task):
     Element.append(im1)
     Element.append(Quality_Bar)
     Element.append(sub_head3)
-    Element.append(text1)    
+    #Element.append(text1)    
     im2 = ActEyeImage(ACT_Task.saveImage_path+"\\DrawEyeFig.png")
     #im3 = QRCodeImage(ACT_Task.saveImage_path+"\\QR_code.png")
 # =============================================================================
@@ -289,8 +289,8 @@ def ACTReport(Element, ACT_Task):
 
 def CUTReport(Element, CUT_Task):
     sub_head2 = sub_head("CUT Dynamic Eyeposition Tracking")
-    sub_head3 = sub_head("Ocular Alignment Table")
-    text1 = con_text("Cover Uncover Test Sequence in Primary Position")
+    sub_head3 = sub_head("Ocular Alignment -- Cover Uncover Test Sequence in Primary Position")
+    #text1 = con_text("Cover Uncover Test Sequence in Primary Position")
     Quality_Bar = quality_bar(CUT_Task.OD, CUT_Task.OS, CUT_Task)
     gaze_table = diagnose_table(CUT_Task)
     
@@ -299,7 +299,7 @@ def CUTReport(Element, CUT_Task):
     Element.append(im1)
     Element.append(Quality_Bar)
     Element.append(sub_head3)
-    Element.append(text1)    
+    #Element.append(text1)    
     im2 = CutEyeImage(CUT_Task.saveImage_path+"\\DrawEyeFig.png")
     im3 = QRCodeImage(CUT_Task.saveImage_path+"\\QR_code.png")
 # =============================================================================
@@ -327,8 +327,8 @@ def Gaze9Report(Element, Gaze9_Session):
                    "LD",  "LU",  "R",  
                    "RD", "RU", "U"]
     sub_head2 = sub_head("9 Gaze Dynamic Eyeposition Tracking")
-    sub_head3 = sub_head("Ocular Motility Table")
-    text1 = con_text("9 Gaze Test Sequence")
+    sub_head3 = sub_head("Ocular Motility -- 9 Gaze Test Sequence")
+    #text1 = con_text("9 Gaze Test Sequence")
     Quality_Bar = quality_bar(Gaze9_Session.OD, Gaze9_Session.OS, Gaze9_Session)
     
     im1 = EyeTrackImage(Gaze9_Session.saveImage_path+"\\DrawEyeTrack.png")
@@ -360,8 +360,7 @@ def Gaze9Report(Element, Gaze9_Session):
     style = [
         ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),    # 字體
         ('FONTSIZE', (0, 0), (-1, -1), 8),          # 字體大小
-        ('TEXTCOLOR', (0, 0), (0, -1), colors.white),          # 字體顏色
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),          # 字體顏色
+        ('TEXTCOLOR', (0, 0),(-1, -1), colors.black),          # 字體顏色
         
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),        # 對齊
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),     # 對齊
@@ -372,11 +371,9 @@ def Gaze9Report(Element, Gaze9_Session):
         ('SPAN',(5,0),(6,0)),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),   # 設置表格框線爲grey色，線寬爲0.5
         
-        ('BACKGROUND', (0, 0), (-1, 0), colors.steelblue),
-        ('BACKGROUND', (0, 0), (0, -1), colors.steelblue),
-        ('BACKGROUND', (1, 1), (-1, 1), colors.powderblue)
+        ('BACKGROUND', (0, 0), (-1, -1), colors.white)
     ]    
-    gaze_table = Table(dis_list, style=style, rowHeights=12) 
+    gaze_table = Table(dis_list, style=style, rowHeights=12, colWidths=6/8.4 *inch) 
 # =============================================================================
 #     tbl_data = [
 #         [im4, gaze_table]]
@@ -387,7 +384,7 @@ def Gaze9Report(Element, Gaze9_Session):
     Element.append(im1)
     Element.append(Quality_Bar)
     Element.append(sub_head3)
-    Element.append(text1)    
+    #Element.append(text1)    
     Element.append(im2) 
     Element.append(im3)
     Element.append(gaze_table)

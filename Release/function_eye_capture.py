@@ -11,8 +11,8 @@ from cv2 import fitEllipse
 # =============================================================================
 # from skimage.feature import canny
 # from skimage.transform import hough_ellipse
-# from scipy.signal import find_peaks, peak_widths
 # =============================================================================
+from scipy.signal import find_peaks, peak_widths
 from matplotlib import pyplot as plt
 
 def get_eclipse_param_pupil(params):  
@@ -22,7 +22,7 @@ def get_eclipse_param_pupil(params):
     params.blobColor = 225
     #params.minArea = 150
     params.minArea = 600
-    params.maxArea = 12000
+    params.maxArea = 15000
     params.filterByCircularity = False
     params.filterByConvexity = True
     params.minConvexity = 0.5
@@ -96,67 +96,39 @@ def capture_eye_pupil(frame,eyes):
 # =============================================================================
 #         cv2.destroyAllWindows()
 # =============================================================================
-        GET_CIRCLE = False;
-# =============================================================================
-#         a = np.where(gray<=minVal)
-#         kernal = (int(np.percentile(a[0],50)),int(np.percentile(a[1],50)))
-# =============================================================================
-        kernal =(minLoc[1],minLoc[0])     
-        pre_thr_xL = gray[kernal]
-        pre_thr_xR = gray[kernal]
-        pre_thr_yD = gray[kernal]
-        pre_thr_yU = gray[kernal]
-        i = 0; dxL = 0; dxR = 0; dyD = 0; dyU = 0
-        STOP_L = False; STOP_R = False; STOP_D = False; STOP_U = False;
-        while i <= 25:
-            x_2L = kernal[0]+dxL
-            x_2R = kernal[0]-dxR
-            y_2D = kernal[1]+dyD
-            y_2U = kernal[1]-dyU
-            try:
-                thr_xL = gray[x_2L,kernal[1]]
-                thr_xR = gray[x_2R,kernal[1]]
-                thr_yD = gray[kernal[0],y_2D]
-                thr_yU = gray[kernal[0],y_2U]
-                if ((thr_xL-pre_thr_xL>15 or thr_xL>90) and 
-                    (thr_xR-pre_thr_xR>15 or thr_xR>90) and
-                    (thr_yD-pre_thr_yD>15 or thr_yD>90) and
-                    (thr_yU-pre_thr_yU>15 or thr_yU>90)): 
-                    thr = np.mean([pre_thr_xL,pre_thr_xR,pre_thr_yD,pre_thr_yU])
-                    break
-                
-                if not (thr_xL-pre_thr_xL>15 or thr_xL>90) and not STOP_L: dxL = i+6
-                else: STOP_L = True
-                
-                if not (thr_xR-pre_thr_xR>15 or thr_xR>90) and not STOP_R: dxR = i+6
-                else: STOP_R = True
-                
-                if not (thr_yD-pre_thr_yD>15 or thr_yD>90) and not STOP_D: dyD = i+6
-                else: STOP_D = True
-                
-                if not (thr_yU-pre_thr_yU>15 or thr_yU>90) and not STOP_U: dyU = i+6
-                else: STOP_U = True
-                
-                if thr_xL > pre_thr_xL and thr_xL < 90: pre_thr_xL = thr_xL
-                if thr_xR > pre_thr_xR and thr_xR < 90: pre_thr_xR = thr_xR
-                if thr_yD > pre_thr_yD and thr_yD < 90: pre_thr_yD = thr_yD
-                if thr_yU > pre_thr_yU and thr_yU < 90: pre_thr_yU = thr_yU                
-                thr = np.mean([pre_thr_xL,pre_thr_xR,pre_thr_yD,pre_thr_yU])
-            except:
-                thr = np.mean([pre_thr_xL,pre_thr_xR,pre_thr_yD,pre_thr_yU])
-                break
-            i+=6
-            
-            
-            
-        thr = int(thr)
-        if thr>=180: thr = 90
+        GET_CIRCLE = False; step = 8; depth = 20
+        kernal =(minLoc[1],minLoc[0])
+        gray_R = np.array(gray[kernal[0]:-1:step,kernal[1]],dtype=int)
+        gray_L = np.array(gray[kernal[0]:0:-step,kernal[1]],dtype=int)
+        gray_U = np.array(gray[kernal[0],kernal[1]:0:-step],dtype=int)
+        gray_D = np.array(gray[kernal[0],kernal[1]:-1:step],dtype=int)
+        
+        diff_R = np.diff(gray_R)
+        diff_L = np.diff(gray_L)
+        diff_U = np.diff(gray_U)
+        diff_D = np.diff(gray_D)
+        
+        peaks_R, _ = find_peaks(diff_R,prominence=depth)
+        peaks_L, _ = find_peaks(diff_L,prominence=depth)
+        peaks_U, _ = find_peaks(diff_U,prominence=depth)
+        peaks_D, _ = find_peaks(diff_D,prominence=depth)
+        
+        try:
+            thr = int(np.mean([gray_R[peaks_R[0]],
+                           gray_L[peaks_L[0]],
+                           gray_U[peaks_U[0]],
+                           gray_D[peaks_D[0]]]))+5
+        except:
+            thr = 45
+
         while not GET_CIRCLE and thr<180:            
             _,roi_gray1 = cv2.threshold(gray,thr,255,0)
-            #cv2.imshow('gray',gray) 
-            #cv2.imshow('roi_gray1',roi_gray1) 
-            #cv2.waitKey(1) 
-            #print(thr)
+# =============================================================================
+#             cv2.imshow('gray',gray) 
+#             cv2.imshow('roi_gray1',roi_gray1) 
+#             cv2.waitKey(1) 
+#             print(thr)
+# =============================================================================
             params_p = cv2.SimpleBlobDetector_Params()
             params_p = get_eclipse_param_pupil(params_p)
             det = cv2.SimpleBlobDetector_create(params_p)
@@ -177,20 +149,16 @@ def capture_eye_pupil(frame,eyes):
                     else:
                         if ex == eyes[0][0] and distance < OD_ds_pre:   
                             OD_ds_pre = distance
-# =============================================================================
-#                             if distance>35:
-#                                 OD_p = [int(kernal[0]+eyes[0][0]), int(kernal[1]+eyes[0][1]), int(kp.size/2)]
-#                             else:
-# =============================================================================
-                            OD_p = [int(kp.pt[0]+eyes[0][0]), int(kp.pt[1]+eyes[0][1]), int(kp.size/2)]
+                            if distance>35:
+                                OD_p = [int(kernal[0]+eyes[0][0]), int(kernal[1]+eyes[0][1]), int(kp.size/2)]
+                            else:
+                                OD_p = [int(kp.pt[0]+eyes[0][0]), int(kp.pt[1]+eyes[0][1]), int(kp.size/2)]
                         elif ex == eyes[1][0] and distance < OS_ds_pre:
                             OS_ds_pre = distance
-# =============================================================================
-#                             if distance>35:
-#                                 OS_p = [int(kernal[0]+eyes[1][0]), int(kernal[1]+eyes[1][1]), int(kp.size/2)]                
-#                             else:
-# =============================================================================
-                            OS_p = [int(kp.pt[0]+eyes[1][0]), int(kp.pt[1]+eyes[1][1]), int(kp.size/2)]                
+                            if distance>35:
+                                OS_p = [int(kernal[0]+eyes[1][0]), int(kernal[1]+eyes[1][1]), int(kp.size/2)]                
+                            else:
+                                OS_p = [int(kp.pt[0]+eyes[1][0]), int(kp.pt[1]+eyes[1][1]), int(kp.size/2)]                
             else:
                 thr += 2
                 if ex == eyes[0][0]:

@@ -30,10 +30,10 @@ EYE         = ['OD','OS']
 ACT         = 'ACT'
 GAZE_9      = '9_Gaze'
 
-ACT_TIME    = ["O_t","CL_t", "CR_t",  "UCL_t"]
+ACT_TIME    = ["O_t","CL_t", "CR_t",  "UCR_t"]
 ACT_COLOR   = ['aqua','plum','gold','lime']
 ACT_STR     = ["Open", "Cover Left", "Cover Right", "Uncover"]
-ACT_LABEL   = ['O','CL','CR','UCL']
+ACT_LABEL   = ['O','CL','CR','UCR']
 
 CUT_TIME    = ["O_t", "CL_t", "UCL_t", "CR_t",  "UCR_t"]
 CUT_STR     = ["Open", "Cover Left", "Uncover Left", "Cover Right", "Uncover Right"]
@@ -239,9 +239,10 @@ class Neurobit():
         eyes_origin = [[0,0,int(width/2),height],
                         [int(width/2),0,int(width/2),height]]
         fourcc = cv2.VideoWriter_fourcc(*'MP42')
-        out = cv2.VideoWriter(os.path.join(self.saveVideo_path,self.FileName+'.avi'),
+        if self.showVideo:
+            out = cv2.VideoWriter(os.path.join(self.saveVideo_path,self.FileName+'.avi'),
                               fourcc, 25, (width,height))
-        eyes, OD_pre, OS_pre = get_eye_position(GetVideo(self.csv_path),eyes_origin)
+        #eyes, OD_pre, OS_pre = get_eye_position(GetVideo(self.csv_path),eyes_origin)
         OD = []; OS = []; thr_eyes = [] 
         frame_cnt = 0; OD_cal_cnt = 0; OS_cal_cnt = 0
         pbar = tqdm(total=int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))
@@ -251,7 +252,7 @@ class Neurobit():
             ret, frame = cap.read()
             if ret == True:
                 frame_cnt+=1                                
-                OD_p,OS_p,thr = capture_eye_pupil(frame,eyes)
+                OD_p,OS_p,thr = capture_eye_pupil(frame,eyes_origin)
                 #print(OD_p)
                 #print(OS_p)
                 thr_eyes.append(thr)
@@ -269,34 +270,38 @@ class Neurobit():
                 else:
                     OS.append([np.nan,np.nan,np.nan])
                     #print("An OS exception occurred")
-                DrawEyePosition(frame, eyes, OD[-1], OS[-1])
-                self.DrawTextVideo(frame, out, frame_cnt)
                 
-                for (ex,ey,ew,eh) in eyes_origin:    
-                    cv2.rectangle(frame,(ex,ey),(ex+ew,ey+eh),(255,0,0),2)
-                    
-                out.write(frame)
                 
                 if self.showVideo:
+                    DrawEyePosition(frame, eyes_origin, OD[-1], OS[-1])
+                    self.DrawTextVideo(frame, out, frame_cnt)
+                    
+                    for (ex,ey,ew,eh) in eyes_origin:    
+                        cv2.rectangle(frame,(ex,ey),(ex+ew,ey+eh),(255,0,0),2)
+                        
+                    out.write(frame)
                     cv2.imshow('frame',frame) 
                     cv2.waitKey(1) 
                 
-                dOD = np.sum(np.abs(np.array(OD[-1])-OD_pre))
-                dOS = np.sum(np.abs(np.array(OS[-1])-OS_pre))
-                if np.logical_or(dOD>30, np.isnan(dOD)) and OD_cal_cnt <= 0:
-                    OD_cal_cnt = 60
-                    eyes, OD_pre, OS_pre = get_eye_position(cap,eyes_origin)    
-                elif np.logical_or(dOS>30, np.isnan(dOS)) and OD_cal_cnt <= 0 and OS_cal_cnt <= 0:
-                    OS_cal_cnt = 60
-                    eyes, OD_pre, OS_pre = get_eye_position(cap,eyes_origin) 
-                OD_cal_cnt-=1; OS_cal_cnt-=1
+# =============================================================================
+#                 dOD = np.sum(np.abs(np.array(OD[-1])-OD_pre))
+#                 dOS = np.sum(np.abs(np.array(OS[-1])-OS_pre))
+#                 if np.logical_or(dOD>30, np.isnan(dOD)) and OD_cal_cnt <= 0:
+#                     OD_cal_cnt = 60
+#                     eyes, OD_pre, OS_pre = get_eye_position(cap,eyes_origin)    
+#                 elif np.logical_or(dOS>30, np.isnan(dOS)) and OD_cal_cnt <= 0 and OS_cal_cnt <= 0:
+#                     OS_cal_cnt = 60
+#                     eyes, OD_pre, OS_pre = get_eye_position(cap,eyes_origin) 
+#                 OD_cal_cnt-=1; OS_cal_cnt-=1
+# =============================================================================
                 
             else:
                 break    
             time.sleep(0.01)
             pbar.update(1)      
-        out.release()
-        cv2.destroyAllWindows()
+        if self.showVideo:
+            out.release()
+            cv2.destroyAllWindows()
         self.OD = np.array(OD).transpose()
         self.OS = np.array(OS).transpose()
     def MergeFile(self):
@@ -634,7 +639,7 @@ class ACT_Task(Neurobit):
         self.CmdTime = {"CL_t":np.array(CL_t),
                         "CR_t":np.array(CR_t),
                         "O_t":np.array(O_t),
-                        "UCL_t":np.array(UCL_t)}
+                        "UCR_t":np.array(UCL_t)}
     def GetActTimeFromCmd(self):
         cmd = self.VoiceCommand
         O_t = np.where(cmd==0)[0]
@@ -644,7 +649,7 @@ class ACT_Task(Neurobit):
         self.CmdTime = {"CL_t": np.array(CL_t),
                         "CR_t": np.array(CR_t),
                         "O_t":  np.array(O_t),
-                        "UCL_t":np.array(UCL_t)}
+                        "UCR_t":np.array(UCL_t)}
     def GetQuality(self):
         OD = self.OD; OS = self.OS
         OD_ACT = []; OS_ACT = [];       # all position in each ACT_TIME
