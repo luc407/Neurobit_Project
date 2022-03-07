@@ -22,6 +22,8 @@ from matplotlib import pyplot as plt
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from function_eye_capture import capture_eye_iris, capture_eye_pupil, get_eye_position
 from datetime import datetime
+from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
+                               AutoMinorLocator)
 
 # google cloud function
 from google.cloud import storage
@@ -142,7 +144,7 @@ class Neurobit():
     def GetFolderPath(self):
         ID, profile = self.GetDxSql()
         #profile[11] = datetime.now().strftime("%Y/%m/%d")
-        #profile[11] = datetime(2022, 2, 13).strftime('%Y/%m/%d')
+        profile[11] = datetime(2022, 3, 7).strftime('%Y/%m/%d')
         folder      = glob.glob(self.main_path  +
                                 "\\Result\\"    + 
                                 ID + "\\"       +
@@ -173,15 +175,15 @@ class Neurobit():
         self.Doctor = cmd_csv.ExaminerID[0]
         self.Device = cmd_csv.Device[0]
         
-        tmp = int(np.where(cmd_csv.ExaminerID == "X")[0]+1)
+        tmp = int(np.where(cmd_csv.PatientID == "Eye")[0]+1)
         if self.task == 'ACT':
-            self.VoiceCommand = np.array(cmd_csv.ExaminerID[tmp:], dtype=float)
+            self.VoiceCommand = np.array(cmd_csv.PatientID[tmp:], dtype=float)
             #print("GET VoiceCommand")
         elif self.task == '9_Gaze':
             self.VoiceCommand = np.array([cmd_csv.ExaminerID[tmp:],cmd_csv.Device[tmp:]], dtype=float)
             #print("GET VoiceCommand")
         elif self.task == 'CUT':
-            self.VoiceCommand = np.array(cmd_csv.ExaminerID[tmp:], dtype=float)
+            self.VoiceCommand = np.array(cmd_csv.PatientID[tmp:], dtype=float)
             #print("GET VoiceCommand")
         else:
             pass#print("Go to make "+self.task+" function!!!")
@@ -293,7 +295,7 @@ class Neurobit():
             for i in range(1,3):
                 csv_2 = pd.read_csv(self.session[i], dtype=object)
                 clip_2 = self.session[i].replace(".csv",".mp4")
-                tmp = int(np.where(csv_2.ExaminerID == "X")[0]+1)
+                tmp = int(np.where(csv_2.PatientID == "Eye")[0]+1)
                 csv_1 = csv_1.append(csv_2[tmp:], ignore_index=True)
                 video_1 = VideoFileClip(clip_1)
                 video_2 = VideoFileClip(clip_2)                
@@ -739,7 +741,7 @@ class ACT_Task(Neurobit):
                      verticalalignment='center', fontsize=8) 
             plt.ylim([-100,100])
         plt.tight_layout()
-        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeTrack.png")) 
+        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeTrack.png"), dpi=300) 
     def DrawEyeFig(self):
         ACT = []; OD = self.OD; OS = self.OS
         for i in range(0,len(self.OS_ACT)):
@@ -807,7 +809,7 @@ class ACT_Task(Neurobit):
             plt.box(on=None)
             pic_cont+=1
         plt.tight_layout()
-        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeFig.png"))
+        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeFig.png"), dpi=300)
     def DrawTextVideo(self, frame, frame_cnt):
         width = frame.shape[1]
         for i in range(0,len(ACT_TIME)):
@@ -1100,7 +1102,7 @@ class Gaze9_Task(Neurobit):
                      horizontalalignment='right',
                      verticalalignment='center', fontsize=8)        
         plt.tight_layout()
-        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeTrack.png")) 
+        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeTrack.png"), dpi=300) 
         plt.close()
     def DrawEyeFig(self):
         Gaze_9 = []; OD = self.OD; OS = self.OS
@@ -1164,7 +1166,7 @@ class Gaze9_Task(Neurobit):
                 plt.box(on=None)
             pic_cont+=1
         plt.tight_layout()
-        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeFig.png"))
+        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeFig.png"), dpi=300)
         plt.close()
     def DrawEyeMesh(self):
         GAZE_9_TIME     = ['D','F','L','LD','LU','R','RD','RU','U']
@@ -1184,16 +1186,22 @@ class Gaze9_Task(Neurobit):
             ax = plt.subplot(1,2,i+1)
             ax.xaxis.set_ticks(np.array(range(MIN,MAX,5)))
             ax.yaxis.set_ticks(np.array(range(MIN,MAX,5)))
-            ax.xaxis.set_ticklabels([])
-            ax.yaxis.set_ticklabels([])
-            ax.tick_params(direction='in', length=.1, width=.1, colors='grey')
+            ax.grid(which='major') 
+            ax.grid(which='minor') 
+            majorLocator = MultipleLocator(25)
+            minorLocator = MultipleLocator(5)
+            ax.xaxis.set_major_locator(majorLocator)
+            ax.xaxis.set_minor_locator(minorLocator)
+            ax.yaxis.set_major_locator(majorLocator)
+            ax.yaxis.set_minor_locator(minorLocator)
+
             plt.vlines(0,MIN,MAX,linewidth = .5,colors = 'k')
             plt.hlines(0,MIN,MAX,linewidth = .5,colors = 'k')
             plt.vlines(20,-15,15,linewidth = .5,colors = 'g')
             plt.hlines(15,-20,20,linewidth = .5,colors = 'g')
             plt.vlines(-20,-15,15,linewidth = .5,colors = 'g')
             plt.hlines(-15,-20,20,linewidth = .5,colors = 'g')
-            plt.title(EYE[i])
+            plt.title(EYE[i]+" (°)")
             plt.grid(True,alpha = 0.5)
             plt.scatter(-self.NeurobitDxDev_H[:,i],self.NeurobitDxDev_V[:,i]+diff_V,
                         s = cir_size,c = 'k',)
@@ -1201,9 +1209,11 @@ class Gaze9_Task(Neurobit):
                         linewidth = .5,c = 'r',)
             plt.xlim([MIN,MAX])
             plt.ylim([MIN,MAX])
-            
+            plt.xticks(fontsize=8)
+            plt.yticks(fontsize=8)
+
         plt.tight_layout()
-        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeMesh.png"))
+        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeMesh.png"), dpi=300)
         plt.close()
         
 class CUT_Task(Neurobit):
@@ -1542,7 +1552,7 @@ class CUT_Task(Neurobit):
                      verticalalignment='center', fontsize=8) 
             plt.ylim([-100,100])
         plt.tight_layout()
-        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeTrack.png")) 
+        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeTrack.png"), dpi=300) 
     def DrawEyeFig(self):
         ACT = []; OD = self.OD; OS = self.OS
         for i in range(0,len(self.OS_ACT)):
@@ -1610,7 +1620,7 @@ class CUT_Task(Neurobit):
             plt.box(on=None)
             pic_cont+=1
         plt.tight_layout()
-        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeFig.png"))
+        plt.savefig(os.path.join(self.saveImage_path,"DrawEyeFig.png"), dpi=300)
     def DrawTextVideo(self, frame, frame_cnt):
         width = frame.shape[1]
         for i in range(0,len(CUT_TIME)):
