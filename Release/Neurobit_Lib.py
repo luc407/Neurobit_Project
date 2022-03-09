@@ -291,8 +291,7 @@ class Neurobit():
         if len(self.session)>1:
             csv_1 = pd.read_csv(self.session[0], dtype=object)
             clip_1 = self.session[0].replace(".csv",".mp4")
-            #for i in range(1,len(self.session)):
-            for i in range(1,3):
+            for i in range(1,len(self.session)):
                 csv_2 = pd.read_csv(self.session[i], dtype=object)
                 clip_2 = self.session[i].replace(".csv",".mp4")
                 tmp = int(np.where(csv_2.PatientID == "Eye")[0]+1)
@@ -300,14 +299,14 @@ class Neurobit():
                 video_1 = VideoFileClip(clip_1)
                 video_2 = VideoFileClip(clip_2)                
                 final_video = concatenate_videoclips([video_1, video_2])
-                final_video.write_videofile(os.path.join(self.save_MainPath,self.FolderName + "_" + self.task + ".mp4"))  
-                shutil.copyfile(os.path.join(self.save_MainPath,self.FolderName + "_" + self.task + ".mp4"), 
-                                os.path.join(self.save_MainPath,self.FolderName + "_" + self.task + "tmp.mp4")) 
-                clip_1 = os.path.join(self.save_MainPath,self.FolderName + "_" + self.task + "tmp.mp4")
+                final_video.write_videofile(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".mp4"))  
+                shutil.copyfile(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".mp4"), 
+                                os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + "tmp.mp4")) 
+                clip_1 = os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + "tmp.mp4")
+                csv_1.to_csv(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".csv"))
             video_1.reader.close(); video_2.reader.close()
-            os.remove(os.path.join(self.save_MainPath,self.FolderName + "_" + self.task + "tmp.mp4"))
-            csv_1.to_csv(os.path.join(self.save_MainPath,self.FolderName + "_" + self.task + ".csv"))
-            self.csv_path = os.path.join(self.save_MainPath,self.FolderName + "_" + self.task + ".csv")
+            os.remove(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + "tmp.mp4"))            
+            self.csv_path = os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".csv")
         else:
             self.csv_path = self.session[0]
     def Save2Cloud(self):
@@ -387,6 +386,7 @@ class ACT_Task(Neurobit):
         self.main_path = csv_path.replace("\\"+csv_path.split('\\')[-2],"").replace("\\"+csv_path.split('\\')[-1],"")
         self.save_MainPath = self.main_path+"\\"+self.FolderName
         self.saveReport_path = self.save_MainPath
+        self.saveMerge_path = self.save_MainPath+"\\"+self.task
         self.saveVideo_path = self.save_MainPath+"\\"+self.task+"\\HoughCircle"
         self.saveImage_path = self.save_MainPath+"\\"+self.task+"\\Image"              
         if not os.path.isdir(self.saveVideo_path):
@@ -848,6 +848,7 @@ class Gaze9_Task(Neurobit):
         self.main_path = csv_path.replace("\\"+csv_path.split('\\')[-2],"").replace("\\"+csv_path.split('\\')[-1],"")
         self.save_MainPath = self.main_path+"\\"+self.FolderName
         self.saveReport_path = self.save_MainPath
+        self.saveMerge_path = self.save_MainPath+"\\"+self.task
         self.saveVideo_path = self.save_MainPath+"\\"+self.task+"\\HoughCircle"
         self.saveImage_path = self.save_MainPath+"\\"+self.task+"\\Image"              
         if not os.path.isdir(self.saveVideo_path):
@@ -1226,6 +1227,7 @@ class CUT_Task(Neurobit):
         self.main_path = csv_path.replace("\\"+csv_path.split('\\')[-2],"").replace("\\"+csv_path.split('\\')[-1],"")
         self.save_MainPath = self.main_path+"\\"+self.FolderName
         self.saveReport_path = self.save_MainPath
+        self.saveMerge_path = self.save_MainPath+"\\"+self.task
         self.saveVideo_path = self.save_MainPath+"\\"+self.task+"\\HoughCircle"
         self.saveImage_path = self.save_MainPath+"\\"+self.task+"\\Image"              
         if not os.path.isdir(self.saveVideo_path):
