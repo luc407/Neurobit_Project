@@ -290,22 +290,18 @@ class Neurobit():
     def MergeFile(self):
         if len(self.session)>1:
             csv_1 = pd.read_csv(self.session[0], dtype=object)
-            clip_1 = self.session[0].replace(".csv",".mp4")
-            for i in range(1,len(self.session)):
+            videoList = []
+            videoList.append(VideoFileClip(self.session[0].replace(".csv",".mp4")))
+            for i in range(1,len(self.session)):                
                 csv_2 = pd.read_csv(self.session[i], dtype=object)
-                clip_2 = self.session[i].replace(".csv",".mp4")
                 tmp = int(np.where(csv_2.PatientID == "Eye")[0]+1)
                 csv_1 = csv_1.append(csv_2[tmp:], ignore_index=True)
-                video_1 = VideoFileClip(clip_1)
-                video_2 = VideoFileClip(clip_2)                
-                final_video = concatenate_videoclips([video_1, video_2])
-                final_video.write_videofile(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".mp4"))  
-                shutil.copyfile(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".mp4"), 
-                                os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + "tmp.mp4")) 
-                clip_1 = os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + "tmp.mp4")
-                csv_1.to_csv(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".csv"))
-            video_1.reader.close(); video_2.reader.close()
-            os.remove(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + "tmp.mp4"))            
+                video = VideoFileClip(self.session[i].replace(".csv",".mp4"))
+                videoList.append(video)
+                              
+            final_video = concatenate_videoclips(videoList)
+            final_video.write_videofile(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".mp4"))  
+            csv_1.to_csv(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".csv"))        
             self.csv_path = os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".csv")
         else:
             self.csv_path = self.session[0]
