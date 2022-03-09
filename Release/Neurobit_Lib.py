@@ -144,7 +144,7 @@ class Neurobit():
     def GetFolderPath(self):
         ID, profile = self.GetDxSql()
         #profile[11] = datetime.now().strftime("%Y/%m/%d")
-        profile[11] = datetime(2022, 3, 7).strftime('%Y/%m/%d')
+        profile[11] = datetime(2022, 3, 8).strftime('%Y/%m/%d')
         folder      = glob.glob(self.main_path  +
                                 "\\Result\\"    + 
                                 ID + "\\"       +
