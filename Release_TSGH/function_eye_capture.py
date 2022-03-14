@@ -102,28 +102,30 @@ def capture_eye_pupil(frame,eyes):
 # =============================================================================
         GET_CIRCLE = False; step = 8; depth = 20
         kernal =(minLoc[1],minLoc[0])
-        gray_R = np.array(gray[kernal[0]:-1:step,kernal[1]],dtype=int)
-        gray_L = np.array(gray[kernal[0]:0:-step,kernal[1]],dtype=int)
-        gray_U = np.array(gray[kernal[0],kernal[1]:0:-step],dtype=int)
-        gray_D = np.array(gray[kernal[0],kernal[1]:-1:step],dtype=int)
-        
-        diff_R = np.diff(gray_R)
-        diff_L = np.diff(gray_L)
-        diff_U = np.diff(gray_U)
-        diff_D = np.diff(gray_D)
-        
-        peaks_R, _ = find_peaks(diff_R,prominence=depth)
-        peaks_L, _ = find_peaks(diff_L,prominence=depth)
-        peaks_U, _ = find_peaks(diff_U,prominence=depth)
-        peaks_D, _ = find_peaks(diff_D,prominence=depth)
-        
-        try:
-            thr = int(np.mean([gray_R[peaks_R[0]],
-                           gray_L[peaks_L[0]],
-                           gray_U[peaks_U[0]],
-                           gray_D[peaks_D[0]]]))-5
-        except:
-            thr = 45
+# =============================================================================
+#         gray_R = np.array(gray[kernal[0]:-1:step,kernal[1]],dtype=int)
+#         gray_L = np.array(gray[kernal[0]:0:-step,kernal[1]],dtype=int)
+#         gray_U = np.array(gray[kernal[0],kernal[1]:0:-step],dtype=int)
+#         gray_D = np.array(gray[kernal[0],kernal[1]:-1:step],dtype=int)
+#         
+#         diff_R = np.diff(gray_R)
+#         diff_L = np.diff(gray_L)
+#         diff_U = np.diff(gray_U)
+#         diff_D = np.diff(gray_D)
+#         
+#         peaks_R, _ = find_peaks(diff_R,prominence=depth)
+#         peaks_L, _ = find_peaks(diff_L,prominence=depth)
+#         peaks_U, _ = find_peaks(diff_U,prominence=depth)
+#         peaks_D, _ = find_peaks(diff_D,prominence=depth)
+#         
+#         try:
+#             thr = int(np.mean([gray_R[peaks_R[0]],
+#                            gray_L[peaks_L[0]],
+#                            gray_U[peaks_U[0]],
+#                            gray_D[peaks_D[0]]]))-5
+#         except:
+#             thr = 45
+# =============================================================================
         thr = minVal+20
         cnt = 0
         while not GET_CIRCLE and cnt<10:            
