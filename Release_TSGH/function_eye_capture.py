@@ -94,7 +94,7 @@ def capture_eye_pupil(frame,eyes):
         gray = cv2.cvtColor(roi_color2, cv2.COLOR_BGR2GRAY) 
         
         #gray = modify_contrast_and_brightness2(gray)
-        gray = cv2.GaussianBlur(gray, (15, 15), 0)
+        gray = cv2.GaussianBlur(gray, (9, 9), 0)
         (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray) 
         
 # =============================================================================
@@ -121,9 +121,10 @@ def capture_eye_pupil(frame,eyes):
             thr = int(np.mean([gray_R[peaks_R[0]],
                            gray_L[peaks_L[0]],
                            gray_U[peaks_U[0]],
-                           gray_D[peaks_D[0]]]))+5
+                           gray_D[peaks_D[0]]]))-5
         except:
             thr = 45
+        thr = minVal+20
         cnt = 0
         while not GET_CIRCLE and cnt<10:            
             _,roi_gray1 = cv2.threshold(gray,thr,255,0)
@@ -131,8 +132,8 @@ def capture_eye_pupil(frame,eyes):
 #             cv2.imshow('gray',gray) 
 #             cv2.imshow('roi_gray1',roi_gray1) 
 #             cv2.waitKey(1) 
-#             print(thr)
-# =============================================================================            
+# =============================================================================
+            #print(thr)
             det = cv2.SimpleBlobDetector_create(params_p)            
             circles = det.detect(roi_gray1)                        
             OD_pre_size = 0; OS_pre_size = 0; OD_ds_pre = 1000; OS_ds_pre = 1000;

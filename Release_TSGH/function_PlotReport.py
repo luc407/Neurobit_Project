@@ -96,7 +96,7 @@ def subject_table(Subject):
 
 def clinic_table(Subject):
     if Subject.ID:
-        data = [['Hx: ' + Subject.Dx +" XT:"+Subject.XT_PD+" ET:"+Subject.ET_PD+" hyper:"+Subject.HYPER+" hypo:"+Subject.HYPO,'','','','','','','','','',''],
+        data = [['Hx: ' + Subject.Dx ,'','','','','','','','','',''],
                 ['',    'VAsc',          'VAcc',        'Auto-Ref',     'pupil',            'WTW',          'AXL',          'Hertel',           '',                 'PD',       'Stereo'],
                 ['OD',  Subject.VA_OD, Subject.BCVA_OD, Subject.Ref_OD,  Subject.pupil_OD,  Subject.WTW_OD, Subject.AL_OD, Subject.Hertal_OD,  Subject.Hertal_Len, Subject.PD, Subject.Stereo],
                 ['OS',  Subject.VA_OS, Subject.BCVA_OS, Subject.Ref_OS,  Subject.pupil_OS,  Subject.WTW_OS, Subject.AL_OS, Subject.Hertal_OS,  '',                 '',         ''],
@@ -205,11 +205,11 @@ def EyeTrackImage(file_path):
     im.hAlign = 'CENTER'
     return im
 def ActEyeImage(file_path):
-    im = Image(file_path, width=4 *inch, height=5.8*inch)
+    im = Image(file_path, width=3 *inch, height=4.4*inch)
     im.hAlign = 'RIGHT'
     return im
 def CutEyeImage(file_path):
-    im = Image(file_path, width=4 *inch, height=6.6*inch)
+    im = Image(file_path, width=3 *inch, height=5*inch)
     im.hAlign = 'RIGHT'
     return im
 def Gaze9EyeImage(file_path):
@@ -256,7 +256,7 @@ def CreatePDF(file_path):
 def ACTReport(Element, ACT_Task):
     sub_head2 = sub_head("ACT Dynamic Eyeposition Tracking")
     sub_head3 = sub_head("Ocular Alignment -- Alternated Cover Test Sequence in Primary Position")
-    #text1 = con_text("Alternated Cover Test Sequence in Primary Position")
+    text1 = con_text("Alternated Cover Test Sequence in Primary Position")
     Quality_Bar = quality_bar(ACT_Task.OD, ACT_Task.OS, ACT_Task)
     gaze_table = diagnose_table(ACT_Task)
     
@@ -265,18 +265,18 @@ def ACTReport(Element, ACT_Task):
     Element.append(im1)
     Element.append(Quality_Bar)
     Element.append(sub_head3)
-    #Element.append(text1)    
+    Element.append(text1)    
     im2 = ActEyeImage(ACT_Task.saveImage_path+"\\DrawEyeFig.png")
-    #im3 = QRCodeImage(ACT_Task.saveImage_path+"\\QR_code.png")
+    im3 = QRCodeImage(ACT_Task.saveImage_path+"\\QR_code.png")
+    tbl_data = [
+        [gaze_table, im2],
+        [im3,        " "],
+    ]
 # =============================================================================
 #     tbl_data = [
-#         [gaze_table, im2],
-#         [im3,        " "],
+#         [im2],
 #     ]
 # =============================================================================
-    tbl_data = [
-        [im2],
-    ]
     style = [
         ('ALIGN', (1, 0), (1, -1), 'RIGHT'),        # 對齊
         ('ALIGN', (0, 0), (0, -1), 'LEFT'),        # 對齊
@@ -290,7 +290,7 @@ def ACTReport(Element, ACT_Task):
 def CUTReport(Element, CUT_Task):
     sub_head2 = sub_head("CUT Dynamic Eyeposition Tracking")
     sub_head3 = sub_head("Ocular Alignment -- Cover Uncover Test Sequence in Primary Position")
-    #text1 = con_text("Cover Uncover Test Sequence in Primary Position")
+    text1 = con_text("Cover Uncover Test Sequence in Primary Position")
     Quality_Bar = quality_bar(CUT_Task.OD, CUT_Task.OS, CUT_Task)
     gaze_table = diagnose_table(CUT_Task)
     
@@ -299,18 +299,18 @@ def CUTReport(Element, CUT_Task):
     Element.append(im1)
     Element.append(Quality_Bar)
     Element.append(sub_head3)
-    #Element.append(text1)    
+    Element.append(text1)    
     im2 = CutEyeImage(CUT_Task.saveImage_path+"\\DrawEyeFig.png")
     im3 = QRCodeImage(CUT_Task.saveImage_path+"\\QR_code.png")
+    tbl_data = [
+        [gaze_table, im2],
+        [im3,        " "],
+    ]
 # =============================================================================
 #     tbl_data = [
-#         [gaze_table, im2],
-#         [im3,        " "],
+#         [im2],
 #     ]
 # =============================================================================
-    tbl_data = [
-        [im2],
-    ]
     
     style = [
         ('ALIGN', (1, 0), (1, -1), 'RIGHT'),        # 對齊
@@ -328,13 +328,13 @@ def Gaze9Report(Element, Gaze9_Session):
                    "RD", "RU", "U"]
     sub_head2 = sub_head("9 Gaze Dynamic Eyeposition Tracking")
     sub_head3 = sub_head("Ocular Motility -- 9 Gaze Test Sequence")
-    #text1 = con_text("9 Gaze Test Sequence")
+    text1 = con_text("9 Gaze Test Sequence")
     Quality_Bar = quality_bar(Gaze9_Session.OD, Gaze9_Session.OS, Gaze9_Session)
     
     im1 = EyeTrackImage(Gaze9_Session.saveImage_path+"\\DrawEyeTrack.png")
     im2 = Gaze9EyeImage(Gaze9_Session.saveImage_path+"\\DrawEyeFig.png")
     im3 = Gaze9EyeMesh(Gaze9_Session.saveImage_path+"\\DrawEyeMesh.png")
-    #im4 = QRCodeImage(Gaze9_Session.saveImage_path+"\\QR_code.png")
+    im4 = QRCodeImage(Gaze9_Session.saveImage_path+"\\QR_code.png")
     Dev_H = Gaze9_Session.NeurobitDxDev_H
     Dev_V = Gaze9_Session.NeurobitDxDev_V
     Diff_H = Dev_H[:,0]-Dev_H[:,1]
@@ -374,20 +374,18 @@ def Gaze9Report(Element, Gaze9_Session):
         ('BACKGROUND', (0, 0), (-1, -1), colors.white)
     ]    
     gaze_table = Table(dis_list, style=style, rowHeights=12, colWidths=6/8.4 *inch) 
-# =============================================================================
-#     tbl_data = [
-#         [im4, gaze_table]]
-#     tbl = Table(tbl_data)
-# =============================================================================
+    tbl_data = [
+        [im4, gaze_table]]
+    tbl = Table(tbl_data)
     
     Element.append(sub_head2)    
     Element.append(im1)
     Element.append(Quality_Bar)
     Element.append(sub_head3)
-    #Element.append(text1)    
+    Element.append(text1)    
     Element.append(im2) 
     Element.append(im3)
-    Element.append(gaze_table)
-    #Element.append(tbl)
+    #Element.append(gaze_table)
+    Element.append(tbl)
     return Element     
 

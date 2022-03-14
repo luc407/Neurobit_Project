@@ -32,6 +32,9 @@ EYE         = ['OD','OS']
 ACT         = 'ACT'
 GAZE_9      = '9_Gaze'
 
+DX          = np.array(["control","horizontal strabismus","vertical strabismus",
+               "nystagmus","orbital frx","nerve palsy","TAO"])
+
 ACT_TIME    = ["O_t","CL_t", "CR_t",  "UCR_t"]
 ACT_COLOR   = ['aqua','plum','gold','lime']
 ACT_STR     = ["Open", "Cover Left", "Cover Right", "Uncover"]
@@ -142,20 +145,23 @@ class Neurobit():
                        'XT':[],     'XT type':[],       'ET':[],            'ET type':[],
                        'LHT':[],    'RHT':[],           'LHoT':[],          'RHoT':[]}
     def GetFolderPath(self):
-        ID, profile = self.GetDxSql()
-        #profile[11] = datetime.now().strftime("%Y/%m/%d")
-        profile[11] = datetime(2022, 3, 8).strftime('%Y/%m/%d')
+        ID, profile, _, _ = self.GetDxSql()
+        f   = open(os.path.join(self.major_path,'ID.ns'), 'r')
+        Date = f.readlines()[1].replace('\n','')
         folder      = glob.glob(self.main_path  +
                                 "\\Result\\"    + 
                                 ID + "\\"       +
-                                str(profile[11].replace("/","")+"*"+ ID))[0]
+                                str(Date+"*"+ ID))[0]
         return folder
     def GetSubjectFiles(self, main_path):          
         self.main_path  = main_path
         return glob.glob(self.GetFolderPath()+"\*.csv")
     def GetDxSql(self):
         f   = open(os.path.join(self.major_path,'ID.ns'), 'r')
-        ID  = f.readline().replace('\n','')
+        lines = f.readlines()
+        ID  = lines[0].replace('\n','')
+        Date = lines[1].replace('\n','')
+        Date = datetime(int(Date[:4]), int(Date[4:6]), int(Date[6:])).strftime('%Y/%m/%d')
         con = sqlite3.connect(os.path.join(self.major_path,"NeurobitNS01-1.db"))
         cur = con.cursor()
         cur.execute("SELECT * FROM Patient WHERE [ID]='" + ID + "'")
@@ -164,16 +170,22 @@ class Neurobit():
 #         cur.execute('SELECT * FROM'+ID)
 # =============================================================================
         profile = np.array(cur.fetchall())[-1]
-        return ID, profile
+        cur.execute("SELECT * FROM Visit WHERE [Patient_ID]='" + ID + "'" + 
+                    "AND [Datetime]='"+Date+"'"+
+                    "AND [Procedure_ID]='0'")
+        visit_ID = np.array(cur.fetchall())[0]
+        cur.execute("SELECT * FROM ExamSheet WHERE [Visit_ID]='" + visit_ID[0] + "'")
+        exam_sheet = np.array(cur.fetchall())[0]
+        return ID, profile, exam_sheet, visit_ID
     def GetProfile(self, csv_path):
         cmd_csv = pd.read_csv(csv_path, dtype=object)
-        ID, profile = self.GetDxSql()
+        ID, profile, exam_sheet, visit_ID = self.GetDxSql()
         
-        self.Task   = cmd_csv.Mode[0]
-        self.Date   = cmd_csv.Datetime[0].replace("/","")[:8]
-        self.ID     = cmd_csv.PatientID[0]        
-        self.Doctor = cmd_csv.ExaminerID[0]
+        self.Task   = cmd_csv.Mode[0]        
+        self.ID     = cmd_csv.PatientID[0]              
         self.Device = cmd_csv.Device[0]
+        self.Doctor = visit_ID[3]
+        self.Date   = visit_ID[1].replace("/","")[:8]
         
         tmp = int(np.where(cmd_csv.PatientID == "Eye")[0]+1)
         if self.task == 'ACT':
@@ -194,28 +206,26 @@ class Neurobit():
         self.Age    = str(int(self.Date[:4])-int(self.DoB.replace("/","")[:4]))  
         self.Height = str(profile[8])
         
-# =============================================================================
-#         self.Dx         = str(profile[1])
-#         self.VA_OD      = str(profile[3][0])
-#         self.BCVA_OD    = str(profile[3][1])
-#         self.Ref_OD     = str(profile[3][2])
-#         self.pupil_OD   = str(profile[3][3])
-#         self.WTW_OD     = float(profile[3][4])
-#         self.AL_OD      = float(profile[3][5])
-#         
-#         self.VA_OS      = str(profile[4][0])
-#         self.BCVA_OS    = str(profile[4][1])
-#         self.Ref_OS     = str(profile[4][2])
-#         self.pupil_OS   = str(profile[4][3])          
-#         self.WTW_OS     = float(profile[4][4])
-#         self.AL_OS      = float(profile[4][5])
-#         
-#         self.PD         = str(profile[5][0])            
-#         self.Hertal_OD  = str(profile[5][1])
-#         self.Hertal_OS  = str(profile[5][2])
-#         self.Hertal_Len = str(profile[5][3])
-#         self.Stereo     = str(profile[5][4])
-# =============================================================================
+        self.Dx         = str(DX[np.where(exam_sheet[3:10]=='True')[0]]) + ", " + exam_sheet[-5] + ", " + visit_ID[-1]
+        self.VA_OD      = str(exam_sheet[10])
+        self.BCVA_OD    = str(exam_sheet[11])
+        self.Ref_OD     = str(exam_sheet[12])
+        self.pupil_OD   = str(exam_sheet[13])
+        self.WTW_OD     = float(exam_sheet[14])
+        self.AL_OD      = float(exam_sheet[15])
+        
+        self.VA_OS      = str(exam_sheet[16])
+        self.BCVA_OS    = str(exam_sheet[17])
+        self.Ref_OS     = str(exam_sheet[18])
+        self.pupil_OS   = str(exam_sheet[19])          
+        self.WTW_OS     = float(exam_sheet[20])
+        self.AL_OS      = float(exam_sheet[21])
+        
+        self.PD         = str(exam_sheet[22])            
+        self.Hertal_OD  = str(exam_sheet[23])
+        self.Hertal_OS  = str(exam_sheet[24])
+        self.Hertal_Len = str(exam_sheet[25])
+        self.Stereo     = str(exam_sheet[26])
         
         
         #for line in profile[8][2].split('\n'):
@@ -236,12 +246,11 @@ class Neurobit():
         ret, frame = cap.read()
         height = frame.shape[0]
         width = frame.shape[1]
-        eyes_origin = [[0,0,int(width/2),height],
-                        [int(width/2),0,int(width/2),height]]
+        eyes_origin = [[0,0,int(width/2),int(height)],
+                        [int(width/2),0,int(width/2),int(height)]]
         fourcc = cv2.VideoWriter_fourcc(*'MP42')
-        if self.showVideo:
-            out = cv2.VideoWriter(os.path.join(self.saveVideo_path,self.FileName+'.avi'),
-                              fourcc, 25, (width,height))
+        out = cv2.VideoWriter(os.path.join(self.saveVideo_path,self.FileName+'.mp4'),
+                          fourcc, 25, (width,height))
         #eyes, OD_pre, OS_pre = get_eye_position(GetVideo(self.csv_path),eyes_origin)
         OD = []; OS = []; thr_eyes = [] 
         frame_cnt = 0; OD_cal_cnt = 0; OS_cal_cnt = 0
@@ -265,26 +274,26 @@ class Neurobit():
                     OS.append([int(OS_p[0]), int(OS_p[1]), int(OS_p[2])])
                 else:
                     OS.append([np.nan,np.nan,np.nan])
-                    #print("An OS exception occurred")
+                    #print("An OS exception occurred")                
                 
+                DrawEyePosition(frame, eyes_origin, OD[-1], OS[-1])
+                self.DrawTextVideo(frame, frame_cnt)
+                
+                for (ex,ey,ew,eh) in eyes_origin:    
+                    cv2.rectangle(frame,(ex,ey),(ex+ew,ey+eh),(255,0,0),2)
                 
                 if self.showVideo:
-                    DrawEyePosition(frame, eyes_origin, OD[-1], OS[-1])
-                    self.DrawTextVideo(frame, frame_cnt)
-                    
-                    for (ex,ey,ew,eh) in eyes_origin:    
-                        cv2.rectangle(frame,(ex,ey),(ex+ew,ey+eh),(255,0,0),2)
-                        
-                    out.write(frame)
                     cv2.imshow('frame',frame) 
                     cv2.waitKey(1)  
+                    
+                out.write(frame)
             else:
                 break    
             time.sleep(0.0001)
             pbar.update(1)      
-        if self.showVideo:
-            out.release()
+        if self.showVideo:            
             cv2.destroyAllWindows()
+        out.release()
         self.OD = np.array(OD).transpose()
         self.OS = np.array(OS).transpose()
     def MergeFile(self):
@@ -303,32 +312,34 @@ class Neurobit():
             final_video.write_videofile(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".mp4"))  
             csv_1.to_csv(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".csv"))        
             self.csv_path = os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".csv")
+            self.FileName = self.csv_path.split('\\')[-1].replace(".csv","")
         else:
             self.csv_path = self.session[0]
     def Save2Cloud(self):
         gauth = GoogleAuth()       
         drive = GoogleDrive(gauth) 
-        upload_file = self.FileName+".avi"
-       	gfile = drive.CreateFile({'parents': [{'id': '1Sp9f9izaf5580iVP3Sk-jTuy3a84-u0m'}]})
+        upload_file = self.FileName+".mp4"
+       	gfile = drive.CreateFile({'parents': [{'id': '14MSiEu6cHcsXAElmV9O7vIQj8rlNVCHs'}]})
        	# Read file and set it as the content of this instance.
         os.chdir(self.saveVideo_path)
        	gfile.SetContentFile(upload_file)
-        os.chdir(self.main_path)
+        os.chdir(self.major_path)
        	gfile.Upload() # Upload the file. 
         # Check update or not
         NotUpdated = True
         while NotUpdated:
-            file_list = drive.ListFile({'q': "'{}' in parents and trashed=false".format('1Sp9f9izaf5580iVP3Sk-jTuy3a84-u0m')}).GetList()
+            file_list = drive.ListFile({'q': "'{}' in parents and trashed=false".format('14MSiEu6cHcsXAElmV9O7vIQj8rlNVCHs')}).GetList()
             for file in file_list:
-                if file['title'] == self.FileName+".avi":
+                if file['title'] == self.FileName+".mp4":
                     NotUpdated = False        
     def DrawQRCode(self):
+        os.chdir(self.major_path)
         gauth = GoogleAuth()       
         drive = GoogleDrive(gauth) 
        	# Read file and set it as the content of this instance.
-        file_list = drive.ListFile({'q': "'{}' in parents and trashed=false".format('1Sp9f9izaf5580iVP3Sk-jTuy3a84-u0m')}).GetList()
+        file_list = drive.ListFile({'q': "'{}' in parents and trashed=false".format('14MSiEu6cHcsXAElmV9O7vIQj8rlNVCHs')}).GetList()
         for file in file_list:
-            if file['title'] == self.FileName+".avi":
+            if file['title'] == self.FileName+".mp4":
                 self.website =file['alternateLink']
         img = qrcode.make(self.website)
         img.save(os.path.join(self.saveImage_path,"QR_code.png"))
@@ -397,11 +408,11 @@ class ACT_Task(Neurobit):
         self.SeperateSession()              
         self.FeatureExtraction()  
         self.GetDiagnosis()  
-        #self.Save2Cloud()
+        self.Save2Cloud()
         
         self.DrawEyeFig()
         self.DrawEyeTrack()  
-        #self.DrawQRCode()
+        self.DrawQRCode()
     def GetCommand(self):    
         self.GetProfile(self.csv_path)
         if not 1 in self.VoiceCommand and not 2 in self.VoiceCommand:
@@ -741,21 +752,23 @@ class ACT_Task(Neurobit):
     def DrawEyeFig(self):
         ACT = []; OD = self.OD; OS = self.OS
         for i in range(0,len(self.OS_ACT)):
+            try:t = np.concatenate(np.array(self.CmdTime[ACT_TIME[i]]))
+            except:t = self.CmdTime[ACT_TIME[i]]
             if not np.isnan(self.OD_ACT[i,0]) and not np.isnan(self.OS_ACT[i,0]):
-                OD_diff = abs(OD[0,:]-self.OD_ACT[i,0])+abs(OD[1,:]-self.OD_ACT[i,1])
-                OS_diff = abs(OS[0,:]-self.OS_ACT[i,0])+abs(OS[1,:]-self.OS_ACT[i,1])
+                OD_diff = abs(OD[0,t]-self.OD_ACT[i,0])+abs(OD[1,t]-self.OD_ACT[i,1])
+                OS_diff = abs(OS[0,t]-self.OS_ACT[i,0])+abs(OS[1,t]-self.OS_ACT[i,1])
                 Diff = np.sum(np.array([OD_diff, OS_diff]),axis = 0)
-                pupil = OS[2,:]+OD[2,:]
+                pupil = OS[2,t]+OD[2,t]
             elif np.isnan(self.OD_ACT[i,0]):
-                Diff = abs(OS[0,:]-self.OS_ACT[i,0])+abs(OS[1,:]-self.OS_ACT[i,1])
-                pupil = OS[2,:]
+                Diff = abs(OS[0,t]-self.OS_ACT[i,0])+abs(OS[1,t]-self.OS_ACT[i,1])
+                pupil = OS[2,t]
             else:
-                Diff = abs(OD[0,:]-self.OD_ACT[i,0])+abs(OD[1,:]-self.OD_ACT[i,1])
-                pupil = OD[2,:]
+                Diff = abs(OD[0,t]-self.OD_ACT[i,0])+abs(OD[1,t]-self.OD_ACT[i,1])
+                pupil = OD[2,t]
             try:
-                ind = np.where(Diff == np.nanmin(Diff))[0]
-                ind_pu = np.where(pupil[ind] == np.nanmax(pupil[ind]))[0]
-                ACT.append(ind[ind_pu[0]])
+                #ind = np.where(Diff == np.nanmin(Diff))[0]
+                #ind_pu = np.where(pupil[ind] == np.nanmax(pupil[ind]))[0]
+                ACT.append(t[np.where(Diff == np.nanmin(Diff))[0][0]])
             except:
                 ACT.append(ACT[-1])
                 #print("Not Detect "+ ACT_TIME[i]) 
@@ -864,12 +877,12 @@ class Gaze9_Task(Neurobit):
         self.SeperateSession()                
         if Finished_ACT: self.FeatureExtraction(ACT_Task) 
         else: self.FeatureExtraction() 
-        #self.Save2Cloud()
+        self.Save2Cloud()
                
         self.DrawEyeFig()
         self.DrawEyeMesh()
         self.DrawEyeTrack()  
-        #self.DrawQRCode() 
+        self.DrawQRCode() 
     def GetCommand(self):    
         self.GetProfile(self.csv_path)
         #if int(self.Date) >= 20210601:
@@ -1104,16 +1117,18 @@ class Gaze9_Task(Neurobit):
     def DrawEyeFig(self):
         Gaze_9 = []; OD = self.OD; OS = self.OS
         for i in range(0,len(self.Gaze_9_OD)):
+            try:t = np.concatenate(np.array(self.CmdTime[GAZE_9_TIME[i]]))
+            except:t = self.CmdTime[GAZE_9_TIME[i]]
             if not np.isnan(self.Gaze_9_OD[i,0]) and not np.isnan(self.Gaze_9_OS[i,0]):
-                OD_diff = abs(OD[0,:]-self.Gaze_9_OD[i,0])+abs(OD[1,:]-self.Gaze_9_OD[i,1])
-                OS_diff = abs(OS[0,:]-self.Gaze_9_OS[i,0])+abs(OS[1,:]-self.Gaze_9_OS[i,1])
+                OD_diff = abs(OD[0,t]-self.Gaze_9_OD[i,0])+abs(OD[1,t]-self.Gaze_9_OD[i,1])
+                OS_diff = abs(OS[0,t]-self.Gaze_9_OS[i,0])+abs(OS[1,t]-self.Gaze_9_OS[i,1])
                 Diff = np.sum(np.array([OD_diff, OS_diff]),axis = 0)
             elif np.isnan(self.Gaze_9_OD[i,0]):
-                Diff = abs(OS[0,:]-self.Gaze_9_OS[i,0])+abs(OS[1,:]-self.Gaze_9_OS[i,1])
+                Diff = abs(OS[0,t]-self.Gaze_9_OS[i,0])+abs(OS[1,t]-self.Gaze_9_OS[i,1])
             else:
-                Diff = abs(OD[0,:]-self.Gaze_9_OD[i,0])+abs(OD[1,:]-self.Gaze_9_OD[i,1])                
+                Diff = abs(OD[0,t]-self.Gaze_9_OD[i,0])+abs(OD[1,t]-self.Gaze_9_OD[i,1])                
             if not np.isnan(Diff).all():
-                Gaze_9.append(np.where(Diff == np.nanmin(Diff))[0][0])
+                Gaze_9.append(t[np.where(Diff == np.nanmin(Diff))[0][0]])
             else:
                 Gaze_9.append(np.nan)
         pic_cont = 0
@@ -1238,11 +1253,11 @@ class CUT_Task(Neurobit):
         self.SeperateSession()              
         self.FeatureExtraction()  
         self.GetDiagnosis()  
-        #self.Save2Cloud()
+        self.Save2Cloud()
         
         self.DrawEyeFig()
         self.DrawEyeTrack()  
-        #self.DrawQRCode()
+        self.DrawQRCode()
     def GetCommand(self):    
         self.GetProfile(self.csv_path)
         self.GetCutTimeFromCmd()
@@ -1554,6 +1569,8 @@ class CUT_Task(Neurobit):
     def DrawEyeFig(self):
         ACT = []; OD = self.OD; OS = self.OS
         for i in range(0,len(self.OS_ACT)):
+            try:t = np.concatenate(np.array(self.CmdTime[CUT_TIME[i]]))
+            except:t = self.CmdTime[CUT_TIME[i]]
             if not np.isnan(self.OD_ACT[i,0]) and not np.isnan(self.OS_ACT[i,0]):
                 OD_diff = abs(OD[0,:]-self.OD_ACT[i,0])+abs(OD[1,:]-self.OD_ACT[i,1])
                 OS_diff = abs(OS[0,:]-self.OS_ACT[i,0])+abs(OS[1,:]-self.OS_ACT[i,1])
@@ -1566,9 +1583,11 @@ class CUT_Task(Neurobit):
                 Diff = abs(OD[0,:]-self.OD_ACT[i,0])+abs(OD[1,:]-self.OD_ACT[i,1])
                 pupil = OD[2,:]
             try:
-                ind = np.where(Diff == np.nanmin(Diff))[0]
-                ind_pu = np.where(pupil[ind] == np.nanmax(pupil[ind]))[0]
-                ACT.append(ind[ind_pu[0]])
+# =============================================================================
+#                 ind = np.where(Diff == np.nanmin(Diff))[0]
+#                 ind_pu = np.where(pupil[ind] == np.nanmax(pupil[ind]))[0]
+# =============================================================================
+                ACT.append(t[np.where(Diff == np.nanmin(Diff))[0][0]])
             except:
                 ACT.append(ACT[-1])
                 #print("Not Detect "+ CUT_TIME[i]) 

@@ -100,21 +100,21 @@ if __name__== '__main__':
     PDF_Header = sub_head("NeuroSpeed")
     if IsACT_Task:
         Subject_Table   = subject_table(ACT_Task)
-        #Clinic_Table    = clinic_table(ACT_Task)
+        Clinic_Table    = clinic_table(ACT_Task)
         pdf_path    = os.path.join(ACT_Task.saveReport_path,
                                    ACT_Task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
                                    "_OcularMotility.pdf")
         pdf         = CreatePDF(pdf_path)
     elif IsCUT_Task:
         Subject_Table   = subject_table(CUT_Task)
-        #Clinic_Table    = clinic_table(CUT_Task)
+        Clinic_Table    = clinic_table(CUT_Task)
         pdf_path    = os.path.join(CUT_Task.saveReport_path, 
                                    CUT_Task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
                                    "_OcularMotility.pdf")
         pdf         = CreatePDF(pdf_path)    
     elif IsGaze9_Task:
         Subject_Table   = subject_table(Gaze9_Task)
-        #Clinic_Table    = clinic_table(Gaze9_Task)
+        Clinic_Table    = clinic_table(Gaze9_Task)
         pdf_path    = os.path.join(Gaze9_Task.saveReport_path, 
                                    Gaze9_Task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
                                    "_OcularMotility.pdf")
@@ -126,8 +126,8 @@ if __name__== '__main__':
         Element = []
         Element.append(PDF_Header)
         Element.append(Subject_Table)
-        #Element.append(Sub_Header)
-        #Element.append(Clinic_Table)
+        Element.append(Sub_Header)
+        Element.append(Clinic_Table)
         if IsACT_Task:
             ACTReport(Element, ACT_Task)
 
