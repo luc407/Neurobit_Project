@@ -121,7 +121,7 @@ def DrawEyePosition(frame, eyes, OD_p, OS_p):
 
 class Neurobit():
     def __init__(self):
-        self.version = '2.4' 
+        self.version = '2.7.0' 
         self.major_path = os.getcwd()
         self.task = str("Subject")
         self.session = []
