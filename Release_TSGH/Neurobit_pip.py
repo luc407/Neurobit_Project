@@ -20,6 +20,8 @@ install('Pillow')
 install('cmake')
 install('boost')
 install('tqdm')
+install('httplib2==0.15.0')
+install('google-api-python-client==1.7.11')
 
 import os
 import glob
