@@ -155,7 +155,7 @@ class Neurobit():
         return folder
     def GetSubjectFiles(self, main_path):          
         self.main_path  = main_path
-        return glob.glob(self.GetFolderPath()+"\*.csv")
+        return glob.glob(self.GetFolderPath()+"\*OcularMotility.csv")
     def GetDxSql(self):
         f   = open(os.path.join(self.major_path,'ID.ns'), 'r')
         lines = f.readlines()
