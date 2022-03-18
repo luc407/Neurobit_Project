@@ -172,6 +172,7 @@ class Neurobit():
         profile = np.array(cur.fetchall())[-1]
         cur.execute("SELECT * FROM Visit WHERE [Patient_ID]='" + ID + "'" + 
                     "AND [Datetime]='"+Date+"'"+
+                    "AND [Procedure]='OcularMotility'"
                     "AND [Procedure_ID]='0'")
         visit_ID = np.array(cur.fetchall())[0]
         cur.execute("SELECT * FROM ExamSheet WHERE [Visit_ID]='" + visit_ID[0] + "'")
