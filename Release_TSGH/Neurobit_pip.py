@@ -22,6 +22,9 @@ install('boost')
 install('tqdm')
 install('httplib2==0.15.0')
 install('google-api-python-client==1.7.11')
+install('pandas')
+install('matplotlib')
+install('scipy')
 
 import os
 import glob
