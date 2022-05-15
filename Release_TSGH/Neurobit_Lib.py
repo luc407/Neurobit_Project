@@ -30,6 +30,7 @@ from google.cloud import storage
 
 EYE         = ['OD','OS']
 ACT         = 'ACT'
+CUT         = 'CUT'
 GAZE_9      = '9_Gaze'
 
 DX          = np.array(["control","horizontal strabismus","vertical strabismus",
@@ -44,15 +45,14 @@ CUT_TIME    = ["O_t", "CL_t", "UCL_t", "CR_t",  "UCR_t"]
 CUT_STR     = ["Open", "Cover Left", "Uncover Left", "Cover Right", "Uncover Right"]
 CUT_LABEL   = ['O','CL','UCL','CR','UCR']
 
-GAZE_9_TIME     = ['D','F','L','LD','LU','R','RD','RU','U']
+GAZE_9_TIME     = ['F','U','D','R','L','RU','LU','RD','LD']
 GAZE_9_COLOR    = ['deepskyblue',  'wheat',    'mediumpurple', 
                    'slateblue',    'plum',     'lime',         
                    'aqua',         'gold',     'orange']
 GAZE_9_STR      = ["Down",       "Front",    "Left",     
                    "Left Down",  "Left Up",  "Right",  
                    "Right Down", "Right Up", "Up"]
-GAZE_9_EYEFIG = [8,5,6,9,3,4,7,1,2]
-px2degree = 0.06
+GAZE_9_EYEFIG = [5,2,8,4,6,1,3,7,9]
 
 # color map
 line_color_palatte = {'greens':["#A5F5B3", "#51F46D",   "#00F62B", "#008D19", "#004D0D"], # pale / mid / base / dark / black              
@@ -68,14 +68,14 @@ def trans_PD(AL,dx):
     dx = np.array(dx)
     for i in range(0,dx.size):
         try:
-            math.asin((2*abs(dx[i])/AL)*(px2degree))
+            math.asin((2*abs(dx[i])/AL)*(5/33))
         except:
             dx[i] = np.nan
         if dx[i]<0:
             dx[i] = -dx[i]
-            theta = np.append(theta, - 100*math.tan(math.asin((2*dx[i]/AL)*(px2degree))))
+            theta = np.append(theta, - 100*math.tan(math.asin((2*dx[i]/AL)*(5/33))))
         else:
-            theta = np.append(theta, 100*math.tan(math.asin((2*dx[i]/AL)*(px2degree))))
+            theta = np.append(theta, 100*math.tan(math.asin((2*dx[i]/AL)*(5/33))))
     return np.round(theta,1)
 
 def trans_AG(AL,dx):
@@ -83,14 +83,21 @@ def trans_AG(AL,dx):
     dx = np.array(dx)
     for i in range(0,dx.size):
         try:
-            math.asin((2*abs(dx[i])/AL)*(px2degree))
+            Th = math.degrees(math.asin((2*abs(dx[i])/AL)*(50/330)))
         except:
-            dx[i] = np.nan
+            try:
+                Th = 90+math.degrees(
+                    math.asin(
+                        (2*(abs(dx[i])-(AL*330)/(2*50))/AL)*(50/330)
+                        )
+                    )
+            except:
+                Th = np.nan
         if dx[i]<0:
             dx[i] = -dx[i]
-            theta = np.append(theta, - math.degrees(math.asin((2*dx[i]/AL)*(px2degree))))
+            theta = np.append(theta, - Th)
         else:
-            theta = np.append(theta, math.degrees(math.asin((2*dx[i]/AL)*(px2degree))))
+            theta = np.append(theta, Th)
     return np.round(theta,1)
 
 def GetVideo(csv_path):
@@ -193,7 +200,7 @@ class Neurobit():
             self.VoiceCommand = np.array(cmd_csv.PatientID[tmp:], dtype=float)
             #print("GET VoiceCommand")
         elif self.task == '9_Gaze':
-            self.VoiceCommand = np.array([cmd_csv.ExaminerID[tmp:],cmd_csv.Device[tmp:]], dtype=float)
+            self.VoiceCommand = np.array([cmd_csv.ExaminerID[tmp:],cmd_csv.Device[tmp:],cmd_csv.PatientID[tmp:]], dtype=float)
             #print("GET VoiceCommand")
         elif self.task == 'CUT':
             self.VoiceCommand = np.array(cmd_csv.PatientID[tmp:], dtype=float)
@@ -212,15 +219,19 @@ class Neurobit():
         self.BCVA_OD    = str(exam_sheet[11])
         self.Ref_OD     = str(exam_sheet[12])
         self.pupil_OD   = str(exam_sheet[13])
-        self.WTW_OD     = float(exam_sheet[14])
-        self.AL_OD      = float(exam_sheet[15])
+        try: self.WTW_OD     = float(exam_sheet[14]) 
+        except: self.WTW_OD  = np.nan
+        try: self.AL_OD      = float(exam_sheet[15])
+        except: self.AL_OD  = np.nan
         
         self.VA_OS      = str(exam_sheet[16])
         self.BCVA_OS    = str(exam_sheet[17])
         self.Ref_OS     = str(exam_sheet[18])
         self.pupil_OS   = str(exam_sheet[19])          
-        self.WTW_OS     = float(exam_sheet[20])
-        self.AL_OS      = float(exam_sheet[21])
+        try: self.WTW_OS     = float(exam_sheet[20])
+        except: self.WTW_OS  = np.nan
+        try: self.AL_OS      = float(exam_sheet[21])
+        except: self.AL_OS  = np.nan
         
         self.PD         = str(exam_sheet[22])            
         self.Hertal_OD  = str(exam_sheet[23])
@@ -247,21 +258,23 @@ class Neurobit():
         ret, frame = cap.read()
         height = frame.shape[0]
         width = frame.shape[1]
-        eyes_origin = [[0,0,int(width/2),int(height)],
-                        [int(width/2),0,int(width/2),int(height)]]
+
+        eyes_origin = [[int(width/4-200),int(height/2)-100,375,200],
+                       [int(width/2+75),int(height/2)-100,375,200]]
         fourcc = cv2.VideoWriter_fourcc(*'MP42')
         out = cv2.VideoWriter(os.path.join(self.saveVideo_path,self.FileName+'.mp4'),
                           fourcc, 25, (width,height))
-        #eyes, OD_pre, OS_pre = get_eye_position(GetVideo(self.csv_path),eyes_origin)
+        eyes, OD_pre, OS_pre = get_eye_position(GetVideo(self.csv_path),eyes_origin)
         OD = []; OS = []; thr_eyes = [] 
         frame_cnt = 0; OD_cal_cnt = 0; OS_cal_cnt = 0
         pbar = tqdm(total=int(cap.get(cv2.CAP_PROP_FRAME_COUNT)))
         cap = GetVideo(self.csv_path)
         while(cap.isOpened()):
+            cap.set(1,frame_cnt)
             ret, frame = cap.read()
             if ret == True:
-                frame_cnt+=1                                             
-                OD_p,OS_p = capture_eye_pupil(frame,eyes_origin)
+                frame_cnt+=1                             
+                OD_p,OS_p,thr = capture_eye_pupil(frame,eyes)
                 if (not np.isnan(OD_p).any() and 
                     eyes_origin[0][0]<OD_p[0]<eyes_origin[0][0]+eyes_origin[0][2] and 
                     eyes_origin[0][1]<OD_p[1]<eyes_origin[0][1]+eyes_origin[0][3]):
@@ -276,8 +289,7 @@ class Neurobit():
                 else:
                     OS.append([np.nan,np.nan,np.nan])
                     #print("An OS exception occurred")                
-                
-                DrawEyePosition(frame, eyes_origin, OD[-1], OS[-1])
+                DrawEyePosition(frame, eyes, OD[-1], OS[-1])
                 self.DrawTextVideo(frame, frame_cnt)
                 
                 for (ex,ey,ew,eh) in eyes_origin:    
@@ -286,12 +298,22 @@ class Neurobit():
                 if self.showVideo:
                     cv2.imshow('frame',frame) 
                     cv2.waitKey(1)  
-                    
+                
                 out.write(frame)
+                dOD = np.sum(np.abs(np.array(OD[-1])-OD_pre))
+                dOS = np.sum(np.abs(np.array(OS[-1])-OS_pre))
+                if np.logical_or(dOD>60, np.isnan(dOD)) and OD_cal_cnt <= 0:
+                    OD_cal_cnt = 60
+                    eyes, OD_pre, OS_pre = get_eye_position(cap,eyes_origin)    
+                elif np.logical_or(dOS>60, np.isnan(dOS)) and OD_cal_cnt <= 0 and OS_cal_cnt <= 0:
+                    OS_cal_cnt = 60
+                    eyes, OD_pre, OS_pre = get_eye_position(cap,eyes_origin) 
+                OD_cal_cnt-=1; OS_cal_cnt-=1
+                
             else:
                 break    
-            time.sleep(0.0001)
-            pbar.update(1)      
+            time.sleep(0.001)
+            pbar.update(1)
         if self.showVideo:            
             cv2.destroyAllWindows()
         out.release()
@@ -316,6 +338,10 @@ class Neurobit():
             self.FileName = self.csv_path.split('\\')[-1].replace(".csv","")
         else:
             self.csv_path = self.session[0]
+    def GetCommand(self):    
+        self.GetProfile(self.csv_path)
+        self.GetTimeFromCmd()
+        self.IsVoiceCommand = True
     def Save2Cloud(self):
         gauth = GoogleAuth()       
         drive = GoogleDrive(gauth) 
@@ -344,45 +370,6 @@ class Neurobit():
                 self.website =file['alternateLink']
         img = qrcode.make(self.website)
         img.save(os.path.join(self.saveImage_path,"QR_code.png"))
-        
-
-def GetMiddleLight(csv_path):
-    cap = GetVideo(csv_path)
-    ret, frame = cap.read()
-    height = frame.shape[0]
-    width = frame.shape[1]
-    middle = [[int(width/2-3*width/50),int(height/4),int(3*width/50),int(height/2)],
-             [int(width/2),int(height/4),int(2*width/50),int(height/2)]]
-    cap = GetVideo(csv_path)
-    guide = [];frame_cnt=0
-    while(cap.isOpened()):
-        cap = GetVideo(csv_path)
-        cap.set(1,frame_cnt)
-        ret, frame = cap.read()
-        if ret == True: 
-            frame_cnt+=1; tmp = []
-            for (ex,ey,ew,eh) in middle:
-                roi_color2_OD = frame[ey:ey+eh, ex:ex+ew]
-                tmp = np.append(tmp,np.sum(roi_color2_OD))
-            guide.append(tmp)
-        else:
-            break 
-    return np.array(guide)
-
-def GetMiddleLightEnvlop(guide):
-        env_up = np.where(guide[:,0]>=np.nanpercentile(guide[:,0], 70))[0]
-        env_low = np.where(guide[:,0]<=np.nanpercentile(guide[:,0], 30))[0]
-        i = 2
-        while len(np.where(env_low>env_up[0])[0])/len(guide)<0.2:
-            #print("Increase env_low sensitivity!: "+str(i+30))
-            env_low = np.where(guide[:,0]<=np.nanpercentile(guide[:,0], 30+i))[0]
-            i+=2
-        i = 2
-        while len(np.where(env_up>env_low[0])[0])/len(guide)<0.2:
-            #print("Increase env_up sensitivity!: "+str(30-i))
-            env_up = np.where(guide[:,0]<=np.nanpercentile(guide[:,0], 30-i))[0]
-            i+=2
-        return env_up, env_low 
     
 class ACT_Task(Neurobit):
     def __init__(self, csv_path):
@@ -414,16 +401,6 @@ class ACT_Task(Neurobit):
         self.DrawEyeFig()
         self.DrawEyeTrack()  
         self.DrawQRCode()
-    def GetCommand(self):    
-        self.GetProfile(self.csv_path)
-        if not 1 in self.VoiceCommand and not 2 in self.VoiceCommand:
-            guide = GetMiddleLight(self.csv_path)
-            env_up, env_low = GetMiddleLightEnvlop(guide)
-            self.GetActTimeFromMiddleLight(guide, env_up, env_low)
-            self.IsVoiceCommand = False
-        else:
-            self.GetActTimeFromCmd()
-            self.IsVoiceCommand = True
     def FeatureExtraction(self):
         OD = self.OD; OS = self.OS
         OD_ACT = []; OS_ACT = [];       # all position in each ACT_TIME
@@ -600,38 +577,8 @@ class ACT_Task(Neurobit):
                 self.NeurobitDxDev_V = abs(OD_fix[1])
         else:
             self.NeurobitDx_V = 'Ortho'
-            self.NeurobitDxDev_V = 0    
-        
-    def GetActTimeFromMiddleLight(self, guide, env_up, env_low):
-        i = 0;CL_t=[]; CR_t=[]; O_t=[]; UCL_t=[]
-        while i in range(0,len(guide)):
-            if i in env_low and i<env_up[0]:    
-                O_t.append(i)
-            elif i in env_up:                   
-                CL_t.append(i)
-            elif i in env_low:                  
-                CR_t.append(i)
-            else:
-                try:
-                    if i-CL_t[-1] < i-CR_t[-1]: 
-                        CL_t.append(i)
-                    elif i-CL_t[-1] > i-CR_t[-1]:
-                        CR_t.append(i)
-                except: O_t.append(i)
-            i+=1
-        if CL_t[-1]>CR_t[-1]:  
-            ind = np.where(np.array(CL_t)>CR_t[-1])[0][0]
-            UCL_t = CL_t[ind:]
-            CL_t = CL_t[:ind]            
-        elif CL_t[-1]<CR_t[-1]:
-            ind = np.where(np.array(CR_t)>CL_t[-1])[0][0]
-            UCL_t = CR_t[ind:]
-            CR_t = CR_t[:ind] 
-        self.CmdTime = {"CL_t":np.array(CL_t),
-                        "CR_t":np.array(CR_t),
-                        "O_t":np.array(O_t),
-                        "UCR_t":np.array(UCL_t)}
-    def GetActTimeFromCmd(self):
+            self.NeurobitDxDev_V = 0            
+    def GetTimeFromCmd(self):
         cmd = self.VoiceCommand
         O_t = np.where(cmd==0)[0]
         CL_t = np.where(np.logical_or(cmd==1,cmd==3))[0]
@@ -641,53 +588,6 @@ class ACT_Task(Neurobit):
                         "CR_t": np.array(CR_t),
                         "O_t":  np.array(O_t),
                         "UCR_t":np.array(UCL_t)}
-    def GetQuality(self):
-        OD = self.OD; OS = self.OS
-        OD_ACT = []; OS_ACT = [];       # all position in each ACT_TIME
-        for i in range(0,len(ACT_TIME)):
-            temp = self.CmdTime[ACT_TIME[i]]
-            if type(self.CmdTime[ACT_TIME[i]]) == list:
-                """Intra-sequence analysis"""
-                OD_ACT_tmp = []; OS_ACT_tmp = [];
-                for temp in self.CmdTime[ACT_TIME[i]]:
-                    OD_ACT_tmp.append(np.round(
-                        [np.nanstd(OD[0][temp]),     # x axis
-                         np.nanstd(OD[1][temp])     # y axis
-                         ],2)) # pupil size
-                    OS_ACT_tmp.append(np.round(
-                        [np.nanstd(OS[0][temp]), 
-                         np.nanstd(OS[1][temp])
-                         ],2))
-                OD_ACT_tmp = np.array(OD_ACT_tmp)
-                OS_ACT_tmp = np.array(OS_ACT_tmp)
-                
-                """Intra-session analysis"""
-                OD_ACT_tmp = []; OS_ACT_tmp = [];
-                for temp in self.CmdTime[ACT_TIME[i]]:
-                    OD_ACT_tmp.append(np.round(
-                        [np.nanmean(OD[0][temp]),     # x axis
-                         np.nanmean(OD[1][temp])     # y axis
-                         ],2)) # pupil size
-                    OS_ACT_tmp.append(np.round(
-                        [np.nanmean(OS[0][temp]), 
-                         np.nanmean(OS[1][temp])
-                         ],2))
-                OD_ACT_tmp = np.array(OD_ACT_tmp)
-                OS_ACT_tmp = np.array(OS_ACT_tmp)
-                
-                OD_ACT.append(np.round(
-                    [np.nanstd(OD_ACT_tmp[:,0]),     # x axis
-                     np.nanstd(OD_ACT_tmp[:,1])    # y axis
-                     ],2))
-                OS_ACT.append(np.round(
-                    [np.nanstd(OS_ACT_tmp[:,0]),     # x axis
-                     np.nanstd(OS_ACT_tmp[:,1])    # y axis
-                     ],2))
-
-        miss_OD = np.count_nonzero(np.isnan(OD[0]))/len(OD[0])
-        miss_OS = np.count_nonzero(np.isnan(OS[0]))/len(OS[0])
-        OD_ACT = np.array(OD_ACT)
-        OS_ACT = np.array(OS_ACT)
     def SeperateSession(self):
         OD = self.OD; OS = self.OS
         for i in range(0,len(ACT_TIME)):
@@ -811,10 +711,10 @@ class ACT_Task(Neurobit):
             exec('ax'+str(pic_cont)+ '.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), "gray")')
             exec('ax'+str(pic_cont)+'.axes.xaxis.set_ticks([])')
             exec('ax'+str(pic_cont)+ '.axes.yaxis.set_ticks([])')
+            exec('ax'+str(pic_cont)+ '.set_ylim(int(3*height/4),int(height/4))')
 # =============================================================================
-#             exec('ax'+str(pic_cont)+ '.set_ylim(int(3*height/4),int(height/4))')
+#             exec('ax'+str(pic_cont)+ '.set_ylim(int(height),int(0))')
 # =============================================================================
-            exec('ax'+str(pic_cont)+ '.set_ylim(int(height),int(0))')
             exec('ax'+str(pic_cont)+ '.set_ylabel(ACT_LABEL[pic_cont-1])')
             plt.box(on=None)
             pic_cont+=1
@@ -884,13 +784,13 @@ class Gaze9_Task(Neurobit):
         self.DrawEyeMesh()
         self.DrawEyeTrack()  
         self.DrawQRCode() 
-    def GetCommand(self):    
-        self.GetProfile(self.csv_path)
+    def GetTimeFromCmd(self):    
         #if int(self.Date) >= 20210601:
         #    stupid_bug = np.where(self.VoiceCommand[0,:] == self.VoiceCommand[0,0])[0]
         #    self.VoiceCommand[:,stupid_bug] = 0
     
         x = np.round(self.VoiceCommand[0,:],2); y = np.round(self.VoiceCommand[1,:],2); self.CmdTime = dict()
+        cover = self.VoiceCommand[2,:]
         
         x_q1 = np.unique(x)[0]
         x_q2 = np.unique(x)[1]
@@ -911,9 +811,9 @@ class Gaze9_Task(Neurobit):
         U = np.where(np.logical_and(np.logical_and(x < x_q3, x > x_q1), y == y_q3))[0]#[60:]
         
         for i in range(0,len(GAZE_9_TIME)):
-            exec('self.CmdTime[GAZE_9_TIME[i]] = '+ GAZE_9_TIME[i])
+            exec('cov_non = np.where(cover['+GAZE_9_TIME[i]+'] == 0)[0]')
+            exec('self.CmdTime[GAZE_9_TIME[i]] = '+GAZE_9_TIME[i]+'[cov_non]')
     def FeatureExtraction(self,*args):
-        GAZE_9_TIME     = ['D','F','L','LD','LU','R','RD','RU','U']
         OD = self.OD; OS = self.OS; Finished_ACT = False
         Gaze_9_OD = []; Gaze_9_OS = [];       # all position in each ACT_TIME
         NeurobitDxDev_H = list();NeurobitDxDev_V = list()
@@ -1015,24 +915,25 @@ class Gaze9_Task(Neurobit):
                 ACT_Task = arg
             
         for i in range(0,len(GAZE_9_TIME)):
+            diff_OD_x = self.Gaze_9_OD[0][0]-self.Gaze_9_OD[i][0]
+            diff_OD_y = self.Gaze_9_OD[0][1]-self.Gaze_9_OD[i][1]
+            diff_OS_x = self.Gaze_9_OS[0][0]-self.Gaze_9_OS[i][0]
+            diff_OS_y = self.Gaze_9_OS[0][1]-self.Gaze_9_OS[i][1]
             if Finished_ACT:
-                diff_OD_x = ACT_Task.OD_ACT[1][0]-self.Gaze_9_OD[i][0]
-                diff_OD_y = ACT_Task.OD_ACT[1][1]-self.Gaze_9_OD[i][1]
-                diff_OS_x = ACT_Task.OS_ACT[2][0]-self.Gaze_9_OS[i][0]
-                diff_OS_y = ACT_Task.OS_ACT[2][1]-self.Gaze_9_OS[i][1]
+                ACTdiff_OD_x = self.Gaze_9_OD[0][0]-ACT_Task.OD_ACT[1][0]
+                ACTdiff_OD_y = self.Gaze_9_OD[0][1]-ACT_Task.OD_ACT[1][1]
+                ACTdiff_OS_x = self.Gaze_9_OS[0][0]-ACT_Task.OS_ACT[2][0]
+                ACTdiff_OS_y = self.Gaze_9_OS[0][1]-ACT_Task.OS_ACT[2][1]
+                AG_OD = trans_AG(self.AL_OD,np.array([diff_OD_x, diff_OD_y])) + trans_AG(self.AL_OD,np.array([ACTdiff_OD_x, ACTdiff_OD_y]))
+                AG_OS = trans_AG(self.AL_OS,np.array([diff_OS_x, diff_OS_y])) + trans_AG(self.AL_OS,np.array([ACTdiff_OS_x, ACTdiff_OS_y]))
             else:
-                diff_OD_x = self.Gaze_9_OD[1][0]-self.Gaze_9_OD[i][0]
-                diff_OD_y = self.Gaze_9_OD[1][1]-self.Gaze_9_OD[i][1]
-                diff_OS_x = self.Gaze_9_OS[1][0]-self.Gaze_9_OS[i][0]
-                diff_OS_y = self.Gaze_9_OS[1][1]-self.Gaze_9_OS[i][1]
-            PD_OD = trans_AG(self.AL_OD,np.array([diff_OD_x, diff_OD_y]))
-            PD_OS = trans_AG(self.AL_OS,np.array([diff_OS_x, diff_OS_y]))
-            NeurobitDxDev_H.append([PD_OD[0], PD_OS[0]])
-            NeurobitDxDev_V.append([PD_OD[1], PD_OS[1]])
+                AG_OD = trans_AG(self.AL_OD,np.array([diff_OD_x, diff_OD_y]))
+                AG_OS = trans_AG(self.AL_OS,np.array([diff_OS_x, diff_OS_y]))
+            NeurobitDxDev_H.append([AG_OD[0], AG_OS[0]])
+            NeurobitDxDev_V.append([AG_OD[1], AG_OS[1]])
         self.NeurobitDxDev_H = np.round(np.array(NeurobitDxDev_H),2)
         self.NeurobitDxDev_V = np.round(np.array(NeurobitDxDev_V),2)
         
-        GAZE_9_TIME     = ['D','F','L','LD','LU','R','RD','RU','U']
         x_lower = self.Gaze_9_OD.transpose()[0][[5,6,0,3,2]]
         x_upper = self.Gaze_9_OD.transpose()[0][[5,7,8,4,2]]
         y_lower = -self.Gaze_9_OD.transpose()[1][[5,6,0,3,2]]
@@ -1081,13 +982,13 @@ class Gaze9_Task(Neurobit):
         fig.set_dpi(300)              
         for i in range(0,len(EYE)):
             if EYE[i] == 'OD':
-                x_diff = self.Gaze_9_OD[1][0]-OD[0,:]
-                y_diff = self.Gaze_9_OD[1][1]-OD[1,:]
+                x_diff = self.Gaze_9_OD[0][0]-OD[0,:]
+                y_diff = self.Gaze_9_OD[0][1]-OD[1,:]
                 x_PD = trans_AG(self.AL_OD,x_diff)
                 y_PD = trans_AG(self.AL_OD,y_diff)
             else:
-                x_diff = self.Gaze_9_OS[1][0]-OS[0,:]
-                y_diff = self.Gaze_9_OS[1][1]-OS[1,:]
+                x_diff = self.Gaze_9_OS[0][0]-OS[0,:]
+                y_diff = self.Gaze_9_OS[0][1]-OS[1,:]
                 x_PD = trans_AG(self.AL_OS,x_diff)
                 y_PD = trans_AG(self.AL_OS,y_diff)
             plt.subplot(1,2,i+1)
@@ -1171,10 +1072,10 @@ class Gaze9_Task(Neurobit):
                 exec('ax'+str(pic_cont+1)+ '.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), "gray")')
                 exec('ax'+str(pic_cont+1)+'.axes.xaxis.set_ticks([])')
                 exec('ax'+str(pic_cont+1)+ '.axes.yaxis.set_ticks([])')
+                exec('ax'+str(pic_cont+1)+ '.set_ylim(int(3*height/4),int(height/4))')
 # =============================================================================
-#             exec('ax'+str(pic_cont)+ '.set_ylim(int(3*height/4),int(height/4))')
+#                 exec('ax'+str(pic_cont+1)+ '.set_ylim(int(height),int(0))')
 # =============================================================================
-                exec('ax'+str(pic_cont+1)+ '.set_ylim(int(height),int(0))')
                 exec('ax'+str(pic_cont+1)+ '.set_ylabel(GAZE_9_TIME[pic_cont])')
                 plt.box(on=None)
             pic_cont+=1
@@ -1182,8 +1083,7 @@ class Gaze9_Task(Neurobit):
         plt.savefig(os.path.join(self.saveImage_path,"DrawEyeFig.png"), dpi=300)
         plt.close()
     def DrawEyeMesh(self):
-        GAZE_9_TIME     = ['D','F','L','LD','LU','R','RD','RU','U']
-        border = [0,3,2,4,8,7,5,6,0]
+        border = [7,2,8,4,6,1,5,3,7]
         MIN = -50; MAX = 50
         fig = plt.gcf()
         fig.set_size_inches(6/1.2,3/1.2, forward=True)
@@ -1259,10 +1159,6 @@ class CUT_Task(Neurobit):
         self.DrawEyeFig()
         self.DrawEyeTrack()  
         self.DrawQRCode()
-    def GetCommand(self):    
-        self.GetProfile(self.csv_path)
-        self.GetCutTimeFromCmd()
-        self.IsVoiceCommand = True
     def FeatureExtraction(self):
         OD = self.OD.astype('float'); OS = self.OS.astype('float')
         OD_mean = np.nanmean(OD[0,:]); OD_std = np.nanstd(OD[0,:])
@@ -1493,7 +1389,7 @@ class CUT_Task(Neurobit):
             self.NeurobitDxDev_V = np.append(self.NeurobitDxDev_V, abs(OS_phoria[1]))
         else: self.NeurobitDxDev_V = np.append(self.NeurobitDxDev_V,0)
    
-    def GetCutTimeFromCmd(self):
+    def GetTimeFromCmd(self):
         cmd = self.VoiceCommand
         O_t = np.where(cmd==0)[0]
         CL_t = np.where(cmd==1)[0]
@@ -1573,16 +1469,16 @@ class CUT_Task(Neurobit):
             try:t = np.concatenate(np.array(self.CmdTime[CUT_TIME[i]]))
             except:t = self.CmdTime[CUT_TIME[i]]
             if not np.isnan(self.OD_ACT[i,0]) and not np.isnan(self.OS_ACT[i,0]):
-                OD_diff = abs(OD[0,:]-self.OD_ACT[i,0])+abs(OD[1,:]-self.OD_ACT[i,1])
-                OS_diff = abs(OS[0,:]-self.OS_ACT[i,0])+abs(OS[1,:]-self.OS_ACT[i,1])
+                OD_diff = abs(OD[0,t]-self.OD_ACT[i,0])+abs(OD[1,t]-self.OD_ACT[i,1])
+                OS_diff = abs(OS[0,t]-self.OS_ACT[i,0])+abs(OS[1,t]-self.OS_ACT[i,1])
                 Diff = np.sum(np.array([OD_diff, OS_diff]),axis = 0)
-                pupil = OS[2,:]+OD[2,:]
+                pupil = OS[2,t]+OD[2,t]
             elif np.isnan(self.OD_ACT[i,0]):
-                Diff = abs(OS[0,:]-self.OS_ACT[i,0])+abs(OS[1,:]-self.OS_ACT[i,1])
-                pupil = OS[2,:]
+                Diff = abs(OS[0,t]-self.OS_ACT[i,0])+abs(OS[1,t]-self.OS_ACT[i,1])
+                pupil = OS[2,t]
             else:
-                Diff = abs(OD[0,:]-self.OD_ACT[i,0])+abs(OD[1,:]-self.OD_ACT[i,1])
-                pupil = OD[2,:]
+                Diff = abs(OD[0,t]-self.OD_ACT[i,0])+abs(OD[1,t]-self.OD_ACT[i,1])
+                pupil = OD[2,t]
             try:
 # =============================================================================
 #                 ind = np.where(Diff == np.nanmin(Diff))[0]
@@ -1630,10 +1526,10 @@ class CUT_Task(Neurobit):
             exec('ax'+str(pic_cont)+ '.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), "gray")')
             exec('ax'+str(pic_cont)+'.axes.xaxis.set_ticks([])')
             exec('ax'+str(pic_cont)+ '.axes.yaxis.set_ticks([])')
+            exec('ax'+str(pic_cont)+ '.set_ylim(int(3*height/4),int(height/4))')
 # =============================================================================
-#             exec('ax'+str(pic_cont)+ '.set_ylim(int(3*height/4),int(height/4))')
+#             exec('ax'+str(pic_cont)+ '.set_ylim(int(height),int(0))')
 # =============================================================================
-            exec('ax'+str(pic_cont)+ '.set_ylim(int(height),int(0))')
             exec('ax'+str(pic_cont)+ '.set_ylabel(CUT_LABEL[pic_cont-1])')
             plt.box(on=None)
             pic_cont+=1

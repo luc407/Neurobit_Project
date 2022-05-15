@@ -30,7 +30,7 @@ if __name__== '__main__':
     for csv_path in csv_files:
         Subject.GetProfile(csv_path)
         #print(Subject.Task)            
-        if "9 Gaze" in Subject.Task:
+        if "9 Gaze Motility Test (9Gaze)" in Subject.Task:
             try: Gaze9_Task.session.append(csv_path)
             except:
                 #print(csv_path)
@@ -41,7 +41,7 @@ if __name__== '__main__':
             except:
                 ACT_Task = Neurobit_Lib.ACT_Task(csv_path)  
                 ACT_Task.session.append(csv_path)
-        elif "Cover/Uncover" in Subject.Task:
+        elif "Cover/Uncover Test (CUT)" in Subject.Task:
             try: CUT_Task.session.append(csv_path)
             except:
                 CUT_Task = Neurobit_Lib.CUT_Task(csv_path)  
