@@ -14,11 +14,16 @@ import pandas as pd
 import Neurobit_Lib
 import subprocess
 import shutil
+import tkinter as tk
+import Neurobit_Lib
 from datetime import datetime
 from reportlab.platypus import BaseDocTemplate, Image, Paragraph, Table, TableStyle, PageBreak, \
     Frame, PageTemplate, NextPageTemplate,Spacer
 from function_PlotReport import main_head, sub_head, con_text, subject_table,\
     clinic_table, diagnose_table, quality_bar, foot1, ACTReport, CreatePDF, Gaze9Report, CUTReport
+from calibration import CalibSystem
+
+
 
 main_path = os.getcwd()
 Fail = []
@@ -26,14 +31,20 @@ Subject = Neurobit_Lib.Neurobit()
             
 if __name__== '__main__':    
     csv_files = Subject.GetSubjectFiles(main_path) 
-    IsACT_Task = False; IsGaze9_Task = False; IsCUT_Task = False;
+    IsACT_Task = False; IsGaze9_Task = False; IsCUT_Task = False; IsCalibrated = False
     for csv_path in csv_files:
+        if not IsCalibrated:
+            root = tk.Tk()
+            my_gui = CalibSystem(root, csv_path)
+            root.mainloop()
+            IsCalibrated = True
+            Neurobit_Lib.OD_WTW = my_gui.OD_WTW
+            Neurobit_Lib.OS_WTW = my_gui.OS_WTW
         Subject.GetProfile(csv_path)
-        #print(Subject.Task)            
+        
         if "9 Gaze Motility Test (9Gaze)" in Subject.Task:
             try: Gaze9_Task.session.append(csv_path)
             except:
-                #print(csv_path)
                 Gaze9_Task = Neurobit_Lib.Gaze9_Task(csv_path)   
                 Gaze9_Task.session.append(csv_path)
         elif "Alternate Cover" in Subject.Task:
@@ -47,7 +58,7 @@ if __name__== '__main__':
                 CUT_Task = Neurobit_Lib.CUT_Task(csv_path)  
                 CUT_Task.session.append(csv_path)
         else:
-            pass#print("Having no ["+Subject.Task+"] function!")
+            pass
     
     try: ACT_Task; IsACT_Task = True
     except: pass#print("No ACT_Task!!!")

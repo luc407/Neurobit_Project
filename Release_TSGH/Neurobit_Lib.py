@@ -60,10 +60,16 @@ line_color_palatte = {'greens':["#A5F5B3", "#51F46D",   "#00F62B", "#008D19", "#
                       'reds':["#FFB2AC", "#FF6154", "#FF1300", "#B90D00", "#650700"],                 
                       'blues':["#A4DCEF", "#54C8EE", "#03B5F0", "#015773", "#012F3F"]}
 
+global OD_WTW, OS_WTW
+OD_WTW = 0; OS_WTW = 0;
+global CAL_VAL_OD, CAL_VAL_OS
+CAL_VAL_OD = 5/33;
+CAL_VAL_OS = 5/33;
+
 def enclosed_area(x_lower, y_lower, x_upper, y_upper):
     return(np.trapz(y_upper, x=x_upper) - np.trapz(y_lower, x=x_lower))
     
-def trans_PD(AL,dx):
+def trans_PD(AL,dx,CAL_VAL):
     theta = []
     dx = np.array(dx)
     for i in range(0,dx.size):
@@ -73,22 +79,22 @@ def trans_PD(AL,dx):
             dx[i] = np.nan
         if dx[i]<0:
             dx[i] = -dx[i]
-            theta = np.append(theta, - 100*math.tan(math.asin((2*dx[i]/AL)*(5/33))))
+            theta = np.append(theta, - 100*math.tan(math.asin((2*dx[i]/AL)*CAL_VAL)))
         else:
-            theta = np.append(theta, 100*math.tan(math.asin((2*dx[i]/AL)*(5/33))))
+            theta = np.append(theta, 100*math.tan(math.asin((2*dx[i]/AL)*CAL_VAL)))
     return np.round(theta,1)
 
-def trans_AG(AL,dx):
+def trans_AG(AL,dx,CAL_VAL):
     theta = []
     dx = np.array(dx)
     for i in range(0,dx.size):
         try:
-            Th = math.degrees(math.asin((2*abs(dx[i])/AL)*(50/330)))
+            Th = math.degrees(math.asin((2*abs(dx[i])/AL)*CAL_VAL))
         except:
             try:
                 Th = 90+math.degrees(
                     math.asin(
-                        (2*(abs(dx[i])-(AL*330)/(2*50))/AL)*(50/330)
+                        (2*(abs(dx[i])-(AL*330)/(2*50))/AL)*CAL_VAL
                         )
                     )
             except:
@@ -188,6 +194,7 @@ class Neurobit():
     def GetProfile(self, csv_path):
         cmd_csv = pd.read_csv(csv_path, dtype=object)
         ID, profile, exam_sheet, visit_ID = self.GetDxSql()
+        global CAL_VAL_OD, CAL_VAL_OS
         
         self.Task   = cmd_csv.Mode[0]        
         self.ID     = cmd_csv.PatientID[0]              
@@ -215,44 +222,34 @@ class Neurobit():
         self.Height = str(profile[8])
         
         self.Dx         = str(DX[np.where(exam_sheet[3:10]=='True')[0]]) + ", " + exam_sheet[-5] + ", " + visit_ID[-1]
-        self.VA_OD      = str(exam_sheet[10])
-        self.BCVA_OD    = str(exam_sheet[11])
-        self.Ref_OD     = str(exam_sheet[12])
-        self.pupil_OD   = str(exam_sheet[13])
-        try: self.WTW_OD     = float(exam_sheet[14]) 
+        self.VA_OD      = str(exam_sheet[11])
+        self.BCVA_OD    = str(exam_sheet[12])
+        self.Ref_OD     = str(exam_sheet[13])
+        self.pupil_OD   = str(exam_sheet[14])
+        try: 
+            self.WTW_OD     = float(exam_sheet[15]) 
+            CAL_VAL_OD      = self.WTW_OD/OD_WTW            
         except: self.WTW_OD  = np.nan
-        try: self.AL_OD      = float(exam_sheet[15])
+        try: self.AL_OD      = float(exam_sheet[16])
         except: self.AL_OD  = np.nan
         
-        self.VA_OS      = str(exam_sheet[16])
-        self.BCVA_OS    = str(exam_sheet[17])
-        self.Ref_OS     = str(exam_sheet[18])
-        self.pupil_OS   = str(exam_sheet[19])          
-        try: self.WTW_OS     = float(exam_sheet[20])
+        self.VA_OS      = str(exam_sheet[17])
+        self.BCVA_OS    = str(exam_sheet[18])
+        self.Ref_OS     = str(exam_sheet[19])
+        self.pupil_OS   = str(exam_sheet[20])          
+        try: 
+            self.WTW_OS     = float(exam_sheet[21])
+            CAL_VAL_OS      = self.WTW_OS/OS_WTW            
         except: self.WTW_OS  = np.nan
-        try: self.AL_OS      = float(exam_sheet[21])
+        try: self.AL_OS      = float(exam_sheet[22])
         except: self.AL_OS  = np.nan
         
-        self.PD         = str(exam_sheet[22])            
-        self.Hertal_OD  = str(exam_sheet[23])
-        self.Hertal_OS  = str(exam_sheet[24])
-        self.Hertal_Len = str(exam_sheet[25])
-        self.Stereo     = str(exam_sheet[26])
-        
-        
-        #for line in profile[8][2].split('\n'):
-        #    if "xt" in line:    self.xt_pd = str(''.join(c for c in line if c.isdigit()))
-        #    else:               self.xt_pd = str(0)
-        #    
-        #    if "et" in line:    self.et_pd = str(''.join(c for c in line if c.isdigit()))
-        #    else:               self.et_pd = str(0)
-        #    
-        #    if "ht" in line:    self.hyper = str(''.join(c for c in line if c.isdigit()))
-        #    else:               self.hyper = str(0)
-        #    
-        #    if "hot" in line:   self.hypo = str(''.join(c for c in line if c.isdigit()))
-        #    else:               self.hypo = str(0)            
-                    
+        self.PD         = str(exam_sheet[23])            
+        self.Hertal_OD  = str(exam_sheet[24])
+        self.Hertal_OS  = str(exam_sheet[25])
+        self.Hertal_Len = str(exam_sheet[26])
+        self.Stereo     = str(exam_sheet[27])
+                            
     def GetEyePosition(self):
         cap = GetVideo(self.csv_path)
         ret, frame = cap.read()
@@ -502,8 +499,8 @@ class ACT_Task(Neurobit):
         OD_fix = OD_ACT[1]-OD_ACT[2]    # CL-CR
         OS_fix = OS_ACT[2]-OS_ACT[1]    # CR-CL
         try:
-            OD_fix = np.append(trans_PD(self.AL_OD,OD_fix[0:2]), OD_fix[2])
-            OS_fix = np.append(trans_PD(self.AL_OS,OS_fix[0:2]), OS_fix[2])
+            OD_fix = np.append(trans_PD(self.AL_OD,OD_fix[0:2]), OD_fix[2],CAL_VAL_OD)
+            OS_fix = np.append(trans_PD(self.AL_OS,OS_fix[0:2]), OS_fix[2],CAL_VAL_OS)
         except:
             pass#print("No profile")
         self.OD_fix = OD_fix        # one position in each ACT_TIME
@@ -616,13 +613,13 @@ class ACT_Task(Neurobit):
             if EYE[i] == 'OD':
                 x_diff = self.OD_ACT[0,0]-OD[0,:]
                 y_diff = self.OD_ACT[0,1]-OD[1,:]
-                x_PD = trans_PD(self.AL_OD,x_diff)
-                y_PD = trans_PD(self.AL_OD,y_diff)
+                x_PD = trans_PD(self.AL_OD,x_diff,CAL_VAL_OD)
+                y_PD = trans_PD(self.AL_OD,y_diff,CAL_VAL_OD)
             else:
                 x_diff = self.OS_ACT[0,0]-OS[0,:]
                 y_diff = self.OS_ACT[0,1]-OS[1,:]
-                x_PD = trans_PD(self.AL_OS,x_diff)
-                y_PD = trans_PD(self.AL_OS,y_diff)
+                x_PD = trans_PD(self.AL_OS,x_diff,CAL_VAL_OS)
+                y_PD = trans_PD(self.AL_OS,y_diff,CAL_VAL_OS)
             plt.subplot(1,2,i+1)
             plt.plot(time,x_PD, linewidth=1, color = 'b',label = 'X axis')
             plt.plot(time,y_PD, linewidth=1, color = 'r',label = 'Y axis')
@@ -924,11 +921,11 @@ class Gaze9_Task(Neurobit):
                 ACTdiff_OD_y = self.Gaze_9_OD[0][1]-ACT_Task.OD_ACT[1][1]
                 ACTdiff_OS_x = self.Gaze_9_OS[0][0]-ACT_Task.OS_ACT[2][0]
                 ACTdiff_OS_y = self.Gaze_9_OS[0][1]-ACT_Task.OS_ACT[2][1]
-                AG_OD = trans_AG(self.AL_OD,np.array([diff_OD_x, diff_OD_y])) + trans_AG(self.AL_OD,np.array([ACTdiff_OD_x, ACTdiff_OD_y]))
-                AG_OS = trans_AG(self.AL_OS,np.array([diff_OS_x, diff_OS_y])) + trans_AG(self.AL_OS,np.array([ACTdiff_OS_x, ACTdiff_OS_y]))
+                AG_OD = trans_AG(self.AL_OD,np.array([diff_OD_x, diff_OD_y]),CAL_VAL_OD) + trans_AG(self.AL_OD,np.array([ACTdiff_OD_x, ACTdiff_OD_y]),CAL_VAL_OD)
+                AG_OS = trans_AG(self.AL_OS,np.array([diff_OS_x, diff_OS_y]),CAL_VAL_OS) + trans_AG(self.AL_OS,np.array([ACTdiff_OS_x, ACTdiff_OS_y]),CAL_VAL_OS)
             else:
-                AG_OD = trans_AG(self.AL_OD,np.array([diff_OD_x, diff_OD_y]))
-                AG_OS = trans_AG(self.AL_OS,np.array([diff_OS_x, diff_OS_y]))
+                AG_OD = trans_AG(self.AL_OD,np.array([diff_OD_x, diff_OD_y]),CAL_VAL_OD)
+                AG_OS = trans_AG(self.AL_OS,np.array([diff_OS_x, diff_OS_y]),CAL_VAL_OS)
             NeurobitDxDev_H.append([AG_OD[0], AG_OS[0]])
             NeurobitDxDev_V.append([AG_OD[1], AG_OS[1]])
         self.NeurobitDxDev_H = np.round(np.array(NeurobitDxDev_H),2)
@@ -984,13 +981,13 @@ class Gaze9_Task(Neurobit):
             if EYE[i] == 'OD':
                 x_diff = self.Gaze_9_OD[0][0]-OD[0,:]
                 y_diff = self.Gaze_9_OD[0][1]-OD[1,:]
-                x_PD = trans_AG(self.AL_OD,x_diff)
-                y_PD = trans_AG(self.AL_OD,y_diff)
+                x_PD = trans_AG(self.AL_OD,x_diff,CAL_VAL_OD)
+                y_PD = trans_AG(self.AL_OD,y_diff,CAL_VAL_OD)
             else:
                 x_diff = self.Gaze_9_OS[0][0]-OS[0,:]
                 y_diff = self.Gaze_9_OS[0][1]-OS[1,:]
-                x_PD = trans_AG(self.AL_OS,x_diff)
-                y_PD = trans_AG(self.AL_OS,y_diff)
+                x_PD = trans_AG(self.AL_OS,x_diff,CAL_VAL_OS)
+                y_PD = trans_AG(self.AL_OS,y_diff,CAL_VAL_OS)
             plt.subplot(1,2,i+1)
             plt.plot(time,x_PD, linewidth=1, color = 'b',label = 'X axis')
             plt.plot(time,y_PD, linewidth=1, color = 'r',label = 'Y axis')
@@ -1272,11 +1269,11 @@ class CUT_Task(Neurobit):
         OS_fix = OS_ACT[3]-OS_ACT[1]    # CR-CL
         
         try:
-            OD_fix = np.append(trans_PD(self.AL_OD,OD_fix[0:2]), OD_fix[2])
-            OS_fix = np.append(trans_PD(self.AL_OS,OS_fix[0:2]), OS_fix[2])
+            OD_fix = np.append(trans_PD(self.AL_OD,OD_fix[0:2],CAL_VAL_OD), OD_fix[2])
+            OS_fix = np.append(trans_PD(self.AL_OS,OS_fix[0:2],CAL_VAL_OS), OS_fix[2])
             
-            OS_phoria = np.append(trans_PD(self.AL_OD,OS_phoria[0:2]), OS_phoria[2])
-            OD_phoria = np.append(trans_PD(self.AL_OS,OD_phoria[0:2]), OD_phoria[2])
+            OS_phoria = np.append(trans_PD(self.AL_OS,OS_phoria[0:2],CAL_VAL_OS), OS_phoria[2])
+            OD_phoria = np.append(trans_PD(self.AL_OD,OD_phoria[0:2],CAL_VAL_OD), OD_phoria[2])
         except:
             pass#print("No profile")
         self.OD_fix = OD_fix        # one position in each CUT_TIME
@@ -1429,13 +1426,13 @@ class CUT_Task(Neurobit):
             if EYE[i] == 'OD':
                 x_diff = self.OD_ACT[0,0]-OD[0,:]
                 y_diff = self.OD_ACT[0,1]-OD[1,:]
-                x_PD = trans_PD(self.AL_OD,x_diff)
-                y_PD = trans_PD(self.AL_OD,y_diff)
+                x_PD = trans_PD(self.AL_OD,x_diff,CAL_VAL_OD)
+                y_PD = trans_PD(self.AL_OD,y_diff,CAL_VAL_OD)
             else:
                 x_diff = self.OS_ACT[0,0]-OS[0,:]
                 y_diff = self.OS_ACT[0,1]-OS[1,:]
-                x_PD = trans_PD(self.AL_OS,x_diff)
-                y_PD = trans_PD(self.AL_OS,y_diff)
+                x_PD = trans_PD(self.AL_OS,x_diff,CAL_VAL_OS)
+                y_PD = trans_PD(self.AL_OS,y_diff,CAL_VAL_OS)
             plt.subplot(1,2,i+1)
             plt.plot(time,x_PD, linewidth=1, color = 'b',label = 'X axis')
             plt.plot(time,y_PD, linewidth=1, color = 'r',label = 'Y axis')
