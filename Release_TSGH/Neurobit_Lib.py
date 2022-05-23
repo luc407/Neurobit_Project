@@ -60,9 +60,9 @@ line_color_palatte = {'greens':["#A5F5B3", "#51F46D",   "#00F62B", "#008D19", "#
                       'reds':["#FFB2AC", "#FF6154", "#FF1300", "#B90D00", "#650700"],                 
                       'blues':["#A4DCEF", "#54C8EE", "#03B5F0", "#015773", "#012F3F"]}
 
-global OD_WTW, OS_WTW
-OD_WTW = 0; OS_WTW = 0;
-global CAL_VAL_OD, CAL_VAL_OS
+global OD_WTW, OS_WTW, CAL_VAL_OD, CAL_VAL_OS
+OD_WTW = 0; 
+OS_WTW = 0;
 CAL_VAL_OD = 5/33;
 CAL_VAL_OS = 5/33;
 
@@ -192,9 +192,10 @@ class Neurobit():
         exam_sheet = np.array(cur.fetchall())[0]
         return ID, profile, exam_sheet, visit_ID
     def GetProfile(self, csv_path):
-        cmd_csv = pd.read_csv(csv_path, dtype=object)
-        ID, profile, exam_sheet, visit_ID = self.GetDxSql()
         global CAL_VAL_OD, CAL_VAL_OS
+        
+        cmd_csv = pd.read_csv(csv_path, dtype=object)
+        ID, profile, exam_sheet, visit_ID = self.GetDxSql()        
         
         self.Task   = cmd_csv.Mode[0]        
         self.ID     = cmd_csv.PatientID[0]              
