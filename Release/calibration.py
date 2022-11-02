@@ -18,12 +18,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 """Initial Setting"""
 my_dpi = 600
-my_image = 'D:\\Neurobit_Project\\Release\\test.jpg'
-
 home: int = 0
 visitor: int = 0
 geo_size = '1320x640'
-
 pic = 60
 csv_path="D:\\Neurobit_Project\\Release\\Result\\A12345678\\20220308_A12345678\\20220308_162040_A12345678_OcularMotility.csv"
 
@@ -32,24 +29,29 @@ def GetVideo(csv_path):
     if not os.path.isfile(fall):
         fall = csv_path.replace(".csv",".mp4") 
     return cv2.VideoCapture(fall)
-
-cap = GetVideo(csv_path)
-cap.set(1,pic)
-ret, im = cap.read()
             
 class CalibSystem:
-    def __init__(self, master):
+    def __init__(self, master, csv_path):
         self.master = master
         self.xy = []
         master.title("Calibration")
         master.geometry(geo_size)
         
+        self.csv_path = csv_path
+        self.cap = GetVideo(self.csv_path)
+        self.cap.set(1,pic)
+        ret, im = self.cap.read()
+        height = im.shape[0]
+        width = im.shape[1]
+        
         self.fig = plt.figure(figsize=(1280/my_dpi, 480/my_dpi), dpi=my_dpi,frameon=False)
-        self.ax1 = self.fig.add_axes([0, 0, 1, 1])
+        self.ax1 = self.fig.add_axes([0, -0.15, 1, 1.2])
         self.ax1.imshow(im)
+        self.ax1.set_xlim(0,width)
+        self.ax1.set_ylim(490,150)        
         self.ax1.axis('off')
-        self.ax1.text(20,460, "Right",fontsize=5)
-        self.ax1.text(1180,460, "Left",fontsize=5)
+        self.ax1.text(20,460, "OD",fontsize=5)
+        self.ax1.text(880,460, "OS",fontsize=5)
         self.im1 = FigureCanvasTkAgg(self.fig, master)
         self.im1.get_tk_widget().place(x=20, y=50)        
         self.scat = self.ax1.scatter([],[], s=10, c="b", marker='+',linewidth=.3)
@@ -80,8 +82,16 @@ class CalibSystem:
     
     def __call__(self, event):
         if event.inaxes is not None:
-            x = int(event.xdata)
-            y = int(event.ydata)
+            x = int(event.xdata)            
+            
+            if len(self.xy) == 0:   y = int(event.ydata); self.cursor = Cursor(self.ax1, horizOn=False, vertOn=True, useblit=True, color='r', linewidth=.3)
+            elif len(self.xy) == 1: y = self.xy[0][1]
+            elif len(self.xy) == 2: y = self.xy[0][1]; self.cursor = Cursor(self.ax1, horizOn=True, vertOn=True, useblit=True, color='r', linewidth=.3)
+            elif len(self.xy) == 3: y = int(event.ydata); self.cursor = Cursor(self.ax1, horizOn=False, vertOn=True, useblit=True, color='r', linewidth=.3)
+            elif len(self.xy) == 4: y = self.xy[3][1]
+            elif len(self.xy) == 5: y = self.xy[3][1]; self.cursor = Cursor(self.ax1, horizOn=True, vertOn=True, useblit=True, color='r', linewidth=.3)
+            else: return
+           
             self.xy.append([x,y])
             self.annot.xy = (x,y)
             text = "({:d},{:d})".format(x,y)
@@ -92,27 +102,21 @@ class CalibSystem:
             self.scat = self.ax1.scatter(np.array(self.xy)[:,0],np.array(self.xy)[:,1], s=10, c="b", marker='+',linewidth=.3)
             self.fig.canvas.draw()
             
-            if len(self.xy)==12:
+            if len(self.xy)==6:
                 self.done_button = tk.Button(self.master, text="Done!", command=self.done)
                 self.done_button.pack(side=tk.LEFT, anchor=tk.S, pady=50)
             else:
                 try: self.done_button.destroy()
                 except: pass
                 
-            if len(self.xy) == 0: self.textvar.set_text("Select right margin of OD iris."); self.fig.canvas.draw()
-            elif len(self.xy) == 1: self.textvar.set_text("Select left margin of OD iris."); self.fig.canvas.draw()
-            elif len(self.xy) == 2: self.textvar.set_text("Select peak of upper eyelid of OD."); self.fig.canvas.draw()
-            elif len(self.xy) == 3: self.textvar.set_text("Select valley of lower eyelid of OD."); self.fig.canvas.draw()
-            elif len(self.xy) == 4: self.textvar.set_text("Select outer corner of OD."); self.fig.canvas.draw()
-            elif len(self.xy) == 5: self.textvar.set_text("Select inner corner of OD."); self.fig.canvas.draw()            
-            elif len(self.xy) == 6: self.textvar.set_text("Select right margin of OS iris."); self.fig.canvas.draw()
-            elif len(self.xy) == 7: self.textvar.set_text("Select left margin of OS iris."); self.fig.canvas.draw()            
-            elif len(self.xy) == 8: self.textvar.set_text("Select peak of upper eyelid of OS."); self.fig.canvas.draw()
-            elif len(self.xy) == 9: self.textvar.set_text("Select valley of lower eyelid of OS."); self.fig.canvas.draw()
-            elif len(self.xy) == 10: self.textvar.set_text("Select inner corner of OS."); self.fig.canvas.draw()
-            elif len(self.xy) == 11: self.textvar.set_text("Select outer corner of OS."); self.fig.canvas.draw()
-            elif len(self.xy) == 12: self.textvar.set_text("Well done!."); self.fig.canvas.draw()
-            elif len(self.xy) > 12: self.textvar.set_text("Too many point!."); self.fig.canvas.draw()
+            if len(self.xy) == 0: self.textvar.set_text("Select center of OD pupil."); self.fig.canvas.draw()
+            elif len(self.xy) == 1: self.textvar.set_text("Select right margin of OD iris."); self.fig.canvas.draw()
+            elif len(self.xy) == 2: self.textvar.set_text("Select left margin of OD iris."); self.fig.canvas.draw()
+            elif len(self.xy) == 3: self.textvar.set_text("Select center of OS pupil."); self.fig.canvas.draw()
+            elif len(self.xy) == 4: self.textvar.set_text("Select right margin of OS iris."); self.fig.canvas.draw()
+            elif len(self.xy) == 5: self.textvar.set_text("Select left margin of OS iris."); self.fig.canvas.draw()            
+            elif len(self.xy) == 6: self.textvar.set_text("Well done!."); self.fig.canvas.draw()
+            elif len(self.xy) > 6: self.textvar.set_text("Too many point!."); self.fig.canvas.draw()
         else:
             print ('Clicked ouside axes bounds but inside plot window')
             
@@ -123,120 +127,113 @@ class CalibSystem:
             if len(self.xy)>0: self.scat = self.ax1.scatter(np.array(self.xy)[:,0],np.array(self.xy)[:,1], s=10, c="b", marker='+',linewidth=.3)
             self.fig.canvas.draw()
             
-            if len(self.xy)==12:
+            if len(self.xy)==6:
                 self.done_button = tk.Button(self.master, text="Done!", command=self.done)
                 self.done_button.pack(side=tk.LEFT, anchor=tk.S, pady=50)
             else:
                 try: self.done_button.destroy()
                 except: pass
             
-            if len(self.xy) == 0: self.textvar.set_text("Select right margin of OD iris."); self.fig.canvas.draw()
-            elif len(self.xy) == 1: self.textvar.set_text("Select left margin of OD iris."); self.fig.canvas.draw()
-            elif len(self.xy) == 2: self.textvar.set_text("Select peak of upper eyelid of OD."); self.fig.canvas.draw()
-            elif len(self.xy) == 3: self.textvar.set_text("Select valley of lower eyelid of OD."); self.fig.canvas.draw()
-            elif len(self.xy) == 4: self.textvar.set_text("Select outer corner of OD."); self.fig.canvas.draw()
-            elif len(self.xy) == 5: self.textvar.set_text("Select inner corner of OD."); self.fig.canvas.draw()            
-            elif len(self.xy) == 6: self.textvar.set_text("Select right margin of OS iris."); self.fig.canvas.draw()
-            elif len(self.xy) == 7: self.textvar.set_text("Select left margin of OS iris."); self.fig.canvas.draw()            
-            elif len(self.xy) == 8: self.textvar.set_text("Select peak of upper eyelid of OS."); self.fig.canvas.draw()
-            elif len(self.xy) == 9: self.textvar.set_text("Select valley of lower eyelid of OS."); self.fig.canvas.draw()
-            elif len(self.xy) == 10: self.textvar.set_text("Select inner corner of OS."); self.fig.canvas.draw()
-            elif len(self.xy) == 11: self.textvar.set_text("Select outer corner of OS."); self.fig.canvas.draw()
-            elif len(self.xy) == 12: self.textvar.set_text("Well done!."); self.fig.canvas.draw()
-            elif len(self.xy) > 12: self.textvar.set_text("Too many point!."); self.fig.canvas.draw()
+            if len(self.xy) == 0: self.textvar.set_text("Select center of OD pupil."); self.fig.canvas.draw()
+            elif len(self.xy) == 1: self.textvar.set_text("Select right margin of OD iris."); self.fig.canvas.draw()
+            elif len(self.xy) == 2: self.textvar.set_text("Select left margin of OD iris."); self.fig.canvas.draw()
+            elif len(self.xy) == 3: self.textvar.set_text("Select center of OS pupil."); self.fig.canvas.draw()
+            elif len(self.xy) == 4: self.textvar.set_text("Select right margin of OS iris."); self.fig.canvas.draw()
+            elif len(self.xy) == 5: self.textvar.set_text("Select left margin of OS iris."); self.fig.canvas.draw()            
+            elif len(self.xy) == 6: self.textvar.set_text("Well done!."); self.fig.canvas.draw()
+            elif len(self.xy) > 6: self.textvar.set_text("Too many point!."); self.fig.canvas.draw()
     
     def done(self):
+        self.OD_WTW = abs(self.xy[1][0]-self.xy[2][0])
+        self.OS_WTW = abs(self.xy[4][0]-self.xy[5][0])
         self.master.destroy()
     
     def nextFrame(self):
         global pic
         pic+=1
-        print(pic)
-        if pic < int(cv2.VideoCapture.get(cap, int(cv2.CAP_PROP_FRAME_COUNT))):
-            cap.set(1,pic)
-            ret, im = cap.read()
+        if pic < int(cv2.VideoCapture.get(self.cap, int(cv2.CAP_PROP_FRAME_COUNT))):
+            self.cap.set(1,pic)
+            ret, im = self.cap.read()
             self.ax1.imshow(im)
             self.ax1.axis('off')
-            self.ax1.text(20,460, "Right",fontsize=5)
-            self.ax1.text(1180,460, "Left",fontsize=5)
+            self.ax1.text(20,460, "OD",fontsize=5)
+            self.ax1.text(880,460, "OS",fontsize=5)
             self.im1 = FigureCanvasTkAgg(self.fig, self.master)
             self.im1.get_tk_widget().place(x=20, y=50)
-            """Define Cursor"""
-            self.cursor = Cursor(self.ax1, horizOn=True, vertOn=True, useblit=True, color='r', linewidth=.3)
             
             """Create Annotation Box"""
             self.annot = self.ax1.annotate("", xy=(0,0), xytext=(-5,5), textcoords='offset points', size = 3)
             self.annot.set_visible(False)
             self.fig.canvas.draw()
+            """Define Cursor"""
+            self.cursor = Cursor(self.ax1, horizOn=True, vertOn=True, useblit=True, color='r', linewidth=.3)
         else:
             pic-=1
     
     def next10Frame(self):
         global pic
         pic+=10
-        print(pic)
-        if pic < int(cv2.VideoCapture.get(cap, int(cv2.CAP_PROP_FRAME_COUNT))):
-            cap.set(1,pic)
-            ret, im = cap.read()
+        if pic < int(cv2.VideoCapture.get(self.cap, int(cv2.CAP_PROP_FRAME_COUNT))):
+            self.cap.set(1,pic)
+            ret, im = self.cap.read()
             self.ax1.imshow(im)
             self.ax1.axis('off')
-            self.ax1.text(20,460, "Right",fontsize=5)
-            self.ax1.text(1180,460, "Left",fontsize=5)
+            self.ax1.text(20,460, "OD",fontsize=5)
+            self.ax1.text(880,460, "OS",fontsize=5)
             self.im1 = FigureCanvasTkAgg(self.fig, self.master)
             self.im1.get_tk_widget().place(x=20, y=50)
-            """Define Cursor"""
-            self.cursor = Cursor(self.ax1, horizOn=True, vertOn=True, useblit=True, color='r', linewidth=.3)
             
             """Create Annotation Box"""
             self.annot = self.ax1.annotate("", xy=(0,0), xytext=(-5,5), textcoords='offset points', size = 3)
             self.annot.set_visible(False)
             self.fig.canvas.draw()
+            """Define Cursor"""
+            self.cursor = Cursor(self.ax1, horizOn=True, vertOn=True, useblit=True, color='r', linewidth=.3)
         else:
             pic-=10
             
     def preFrame(self):
         global pic
         pic-=1
-        print(pic)
         if pic >= 0 :
-            cap.set(1,pic)
-            ret, im = cap.read()
+            self.cap.set(1,pic)
+            ret, im = self.cap.read()
             self.ax1.imshow(im)
             self.ax1.axis('off')
-            self.ax1.text(20,460, "Right",fontsize=5)
-            self.ax1.text(1180,460, "Left",fontsize=5)
+            self.ax1.text(20,460, "OD",fontsize=5)
+            self.ax1.text(880,460, "OS",fontsize=5)
             self.im1 = FigureCanvasTkAgg(self.fig, self.master)
-            self.im1.get_tk_widget().place(x=20, y=50)
-            """Define Cursor"""
-            self.cursor = Cursor(self.ax1, horizOn=True, vertOn=True, useblit=True, color='r', linewidth=.3)
+            self.im1.get_tk_widget().place(x=20, y=50)            
             
             """Create Annotation Box"""
             self.annot = self.ax1.annotate("", xy=(0,0), xytext=(-5,5), textcoords='offset points', size = 3)
             self.annot.set_visible(False)
             self.fig.canvas.draw()
+            """Define Cursor"""
+            self.cursor = Cursor(self.ax1, horizOn=True, vertOn=True, useblit=True, color='r', linewidth=.3)
         else:
             pic+=1
     
     def pre10Frame(self):
         global pic
         pic-=10
-        print(pic)
         if pic >= 0 :
-            cap.set(1,pic)
-            ret, im = cap.read()
+            self.cap.set(1,pic)
+            ret, im = self.cap.read()
             self.ax1.imshow(im)
             self.ax1.axis('off')
-            self.ax1.text(20,460, "Right",fontsize=5)
-            self.ax1.text(1180,460, "Left",fontsize=5)
+            self.ax1.text(20,460, "OD",fontsize=5)
+            self.ax1.text(880,460, "OS",fontsize=5)
             self.im1 = FigureCanvasTkAgg(self.fig, self.master)
             self.im1.get_tk_widget().place(x=20, y=50)
-            """Define Cursor"""
-            self.cursor = Cursor(self.ax1, horizOn=True, vertOn=True, useblit=True, color='r', linewidth=.3)
+            
             
             """Create Annotation Box"""
             self.annot = self.ax1.annotate("", xy=(0,0), xytext=(-5,5), textcoords='offset points', size = 3)
             self.annot.set_visible(False)
             self.fig.canvas.draw()
+            """Define Cursor"""
+            self.cursor = Cursor(self.ax1, horizOn=True, vertOn=True, useblit=True, color='r', linewidth=.3)
         else:
             pic+=10
         
@@ -249,22 +246,19 @@ class CalibSystem:
         self.nextFrame_button.destroy()
         self.next10Frame_button.destroy()
         
-        self.textvar = self.ax1.text(640,40, 
-                                    "Select right margin of OD iris.",
+        self.textvar = self.ax1.text(500,140, 
+                                    "Select center of OD pupil.",
                                     fontsize=4, va='center', ha='center')
         self.fig.canvas.draw()
         
         self.popBack_button = tk.Button(self.master, text="Back", command=self.popBackXY)
         self.popBack_button.pack(side=tk.LEFT, padx=400, anchor=tk.S, pady=50) 
         
-        
-        self.fig.canvas.callbacks.connect('button_press_event', self)
-        
+        self.fig.canvas.callbacks.connect('button_press_event', self)        
 
-        
-        
+
 if __name__ == "__main__":
     root = tk.Tk()
-    my_gui = CalibSystem(root)
+    my_gui = CalibSystem(root, csv_path)
     root.mainloop()
     

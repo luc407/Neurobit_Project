@@ -8,6 +8,7 @@ Created on Fri Oct  8 17:32:28 2021
 # ReportLab imports
 import os
 import numpy as np
+import Neurobit as nb
 from PIL import Image as pImage
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib import colors
@@ -96,7 +97,7 @@ def subject_table(Subject):
 
 def clinic_table(Subject):
     if Subject.ID:
-        data = [['Hx: ' + Subject.Dx +" XT:"+Subject.XT_PD+" ET:"+Subject.ET_PD+" hyper:"+Subject.HYPER+" hypo:"+Subject.HYPO,'','','','','','','','','',''],
+        data = [['Hx: ' + Subject.Dx ,'','','','','','','','','',''],
                 ['',    'VAsc',          'VAcc',        'Auto-Ref',     'pupil',            'WTW',          'AXL',          'Hertel',           '',                 'PD',       'Stereo'],
                 ['OD',  Subject.VA_OD, Subject.BCVA_OD, Subject.Ref_OD,  Subject.pupil_OD,  Subject.WTW_OD, Subject.AL_OD, Subject.Hertal_OD,  Subject.Hertal_Len, Subject.PD, Subject.Stereo],
                 ['OS',  Subject.VA_OS, Subject.BCVA_OS, Subject.Ref_OS,  Subject.pupil_OS,  Subject.WTW_OS, Subject.AL_OS, Subject.Hertal_OS,  '',                 '',         ''],
@@ -132,8 +133,8 @@ def clinic_table(Subject):
 def diagnose_table(OLD_ACT_Task):
     data=[['','','','','',''],
           ['','','','','',''],
-          ['','',OLD_ACT_Task.NeurobitDx_H,str(np.round(OLD_ACT_Task.NeurobitDxDev_H,1))+' PD','',''],
-          ['','',OLD_ACT_Task.NeurobitDx_V,str(np.round(OLD_ACT_Task.NeurobitDxDev_V,1))+' PD','',''],
+          ['','',OLD_ACT_Task.NeurobitDx_H,'\n'+str(np.round(OLD_ACT_Task.NeurobitDxDev_H,1))+' PD','',''],
+          ['','',OLD_ACT_Task.NeurobitDx_V,'\n'+str(np.round(OLD_ACT_Task.NeurobitDxDev_V,1))+' PD','',''],
           ['','','','','',''],
           ['','','','','','']]   
     dis_list = []

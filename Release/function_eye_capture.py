@@ -11,18 +11,18 @@ from cv2 import fitEllipse
 # =============================================================================
 # from skimage.feature import canny
 # from skimage.transform import hough_ellipse
+# from scipy.signal import find_peaks, peak_widths
 # =============================================================================
-from scipy.signal import find_peaks, peak_widths
 from matplotlib import pyplot as plt
 
 def get_eclipse_param_pupil(params):  
     params.filterByColor = False
+    params.filterByArea = True
     params.minThreshold = 65
     params.maxThreshold = 93
     params.blobColor = 225
-    #params.minArea = 150
-    params.minArea = 600
-    params.maxArea = 15000
+    params.minArea = 200
+    params.maxArea = 6000
     params.filterByCircularity = False
     params.filterByConvexity = True
     params.minConvexity = 0.5
@@ -85,61 +85,90 @@ def createEyeMask(eyeLandmarks, im):
 
 def capture_eye_pupil(frame,eyes):
     OD_p = []; OS_p = []; thr_eyes = []
-    params_p = cv2.SimpleBlobDetector_Params()
-    params_p = get_eclipse_param_pupil(params_p)
        
     #frame = cv2.inpaint(frame,frame_blr,3,cv2.INPAINT_TELEA)
     for (ex,ey,ew,eh) in eyes:  
         roi_color2 = frame[ey:ey+eh, ex:ex+ew]   
-        gray = cv2.cvtColor(roi_color2, cv2.COLOR_BGR2GRAY) 
-        
-        #gray = modify_contrast_and_brightness2(gray)
+        gray = cv2.cvtColor(roi_color2, cv2.COLOR_BGR2GRAY)        
+        gray = modify_contrast_and_brightness2(gray)
         gray = cv2.GaussianBlur(gray, (15, 15), 0)
-        (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray) 
-        
+        (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray)        
 # =============================================================================
 #         cv2.destroyAllWindows()
 # =============================================================================
-        GET_CIRCLE = False; step = 8; depth = 20
-        kernal =(minLoc[1],minLoc[0])
-        gray_R = np.array(gray[kernal[0]:-1:step,kernal[1]],dtype=int)
-        gray_L = np.array(gray[kernal[0]:0:-step,kernal[1]],dtype=int)
-        gray_U = np.array(gray[kernal[0],kernal[1]:0:-step],dtype=int)
-        gray_D = np.array(gray[kernal[0],kernal[1]:-1:step],dtype=int)
-        
-        diff_R = np.diff(gray_R)
-        diff_L = np.diff(gray_L)
-        diff_U = np.diff(gray_U)
-        diff_D = np.diff(gray_D)
-        
-        peaks_R, _ = find_peaks(diff_R,prominence=depth)
-        peaks_L, _ = find_peaks(diff_L,prominence=depth)
-        peaks_U, _ = find_peaks(diff_U,prominence=depth)
-        peaks_D, _ = find_peaks(diff_D,prominence=depth)
-        
-        try:
-            thr = int(np.mean([gray_R[peaks_R[0]],
-                           gray_L[peaks_L[0]],
-                           gray_U[peaks_U[0]],
-                           gray_D[peaks_D[0]]]))+5
-        except:
-            thr = 45
-        cnt = 0
-        while not GET_CIRCLE and cnt<10:            
+        GET_CIRCLE = False;
+# =============================================================================
+#         a = np.where(gray<=minVal)
+#         kernal = (int(np.percentile(a[0],50)),int(np.percentile(a[1],50)))
+# =============================================================================
+        kernal =(minLoc[1],minLoc[0])     
+        pre_thr_xL = gray[kernal]
+        pre_thr_xR = gray[kernal]
+        pre_thr_yD = gray[kernal]
+        pre_thr_yU = gray[kernal]
+        i = 0; dxL = 0; dxR = 0; dyD = 0; dyU = 0
+        STOP_L = False; STOP_R = False; STOP_D = False; STOP_U = False;
+        while i <= 75:
+            x_2L = kernal[0]+dxL
+            x_2R = kernal[0]-dxR
+            y_2D = kernal[1]+dyD
+            y_2U = kernal[1]-dyU
+            try:
+                thr_xL = gray[x_2L,kernal[1]]
+                thr_xR = gray[x_2R,kernal[1]]
+                thr_yD = gray[kernal[0],y_2D]
+                thr_yU = gray[kernal[0],y_2U]
+                if ((thr_xL-pre_thr_xL>15 or thr_xL>90) and 
+                    (thr_xR-pre_thr_xR>15 or thr_xR>90) and
+                    (thr_yD-pre_thr_yD>15 or thr_yD>90) and
+                    (thr_yU-pre_thr_yU>15 or thr_yU>90)): 
+                    thr = np.mean([pre_thr_xL,pre_thr_xR,pre_thr_yD,pre_thr_yU])
+                    break
+                
+                if not (thr_xL-pre_thr_xL>15 or thr_xL>90) and not STOP_L: dxL = i+2
+                else: STOP_L = True
+                
+                if not (thr_xR-pre_thr_xR>15 or thr_xR>90) and not STOP_R: dxR = i+2
+                else: STOP_R = True
+                
+                if not (thr_yD-pre_thr_yD>15 or thr_yD>90) and not STOP_D: dyD = i+2
+                else: STOP_D = True
+                
+                if not (thr_yU-pre_thr_yU>15 or thr_yU>90) and not STOP_U: dyU = i+2
+                else: STOP_U = True
+                
+                if thr_xL > pre_thr_xL and thr_xL < 90: pre_thr_xL = thr_xL
+                if thr_xR > pre_thr_xR and thr_xR < 90: pre_thr_xR = thr_xR
+                if thr_yD > pre_thr_yD and thr_yD < 90: pre_thr_yD = thr_yD
+                if thr_yU > pre_thr_yU and thr_yU < 90: pre_thr_yU = thr_yU                
+                thr = np.mean([pre_thr_xL,pre_thr_xR,pre_thr_yD,pre_thr_yU])
+            except:
+                thr = np.mean([pre_thr_xL,pre_thr_xR,pre_thr_yD,pre_thr_yU])
+                break
+            i+=2
+            
+            
+            
+        thr = int(thr)
+        if thr >= 180:  thr = 90
+        elif thr < 70:  thr = 70
+        DC = True
+        while not GET_CIRCLE and thr<180:            
             _,roi_gray1 = cv2.threshold(gray,thr,255,0)
 # =============================================================================
 #             cv2.imshow('gray',gray) 
 #             cv2.imshow('roi_gray1',roi_gray1) 
 #             cv2.waitKey(1) 
-#             print(thr)
-# =============================================================================            
-            det = cv2.SimpleBlobDetector_create(params_p)            
-            circles = det.detect(roi_gray1)                        
+# =============================================================================
+            #print(thr)
+            params_p = cv2.SimpleBlobDetector_Params()
+            params_p = get_eclipse_param_pupil(params_p)
+            det = cv2.SimpleBlobDetector_create(params_p)
+            circles = det.detect(roi_gray1)            
             OD_pre_size = 0; OS_pre_size = 0; OD_ds_pre = 1000; OS_ds_pre = 1000;
-            
             if len(circles)>0:  
                 GET_CIRCLE = True
-                for kp in circles:                    
+                for kp in circles:
                     distance = np.linalg.norm(np.array(kernal)-np.array([kp.pt[0],kp.pt[1]]))
                     #print('distance: '+str(distance))
                     if ew>=274:
@@ -152,23 +181,31 @@ def capture_eye_pupil(frame,eyes):
                     else:
                         if ex == eyes[0][0] and distance < OD_ds_pre:   
                             OD_ds_pre = distance
-                            if distance>35:
-                                OD_p = [int(kernal[0]+eyes[0][0]), int(kernal[1]+eyes[0][1]), int(kp.size/2)]
-                            else:
-                                OD_p = [int(kp.pt[0]+eyes[0][0]), int(kp.pt[1]+eyes[0][1]), int(kp.size/2)]
+# =============================================================================
+#                             if distance>35:
+#                                 OD_p = [int(kernal[0]+eyes[0][0]), int(kernal[1]+eyes[0][1]), int(kp.size/2)]
+#                             else:
+# =============================================================================
+                            OD_p = [int(kp.pt[0]+eyes[0][0]), int(kp.pt[1]+eyes[0][1]), int(kp.size/2)]
                         elif ex == eyes[1][0] and distance < OS_ds_pre:
                             OS_ds_pre = distance
-                            if distance>35:
-                                OS_p = [int(kernal[0]+eyes[1][0]), int(kernal[1]+eyes[1][1]), int(kp.size/2)]                
-                            else:
-                                OS_p = [int(kp.pt[0]+eyes[1][0]), int(kp.pt[1]+eyes[1][1]), int(kp.size/2)]             
+# =============================================================================
+#                             if distance>35:
+#                                 OS_p = [int(kernal[0]+eyes[1][0]), int(kernal[1]+eyes[1][1]), int(kp.size/2)]                
+#                             else:
+# =============================================================================
+                            OS_p = [int(kp.pt[0]+eyes[1][0]), int(kp.pt[1]+eyes[1][1]), int(kp.size/2)]                
             else:
-                thr += 5; cnt+=1
+                if DC: thr -= 2
+                if thr<10 or not DC:
+                    DC = False
+                    thr+=2
                 if ex == eyes[0][0]:
                     OD_p=[np.nan,np.nan,np.nan]
                 elif ex == eyes[1][0]:
                     OS_p=[np.nan,np.nan,np.nan]
-    return np.array(OD_p),np.array(OS_p)
+        thr_eyes.append(thr)
+    return np.array(OD_p),np.array(OS_p),np.array(thr_eyes)
 
 def capture_eye_iris(frame,eyes):
     OD_p = []; OS_p = []; thr_eyes = []
@@ -199,9 +236,9 @@ def capture_eye_iris(frame,eyes):
 
         while not GET_CIRCLE and thr<180:            
             _,roi_gray1 = cv2.threshold(gray,thr,thr,cv2.THRESH_BINARY_INV)
-            #cv2.imshow('gray',gray) 
-            #cv2.imshow('roi_gray1',roi_gray1) 
-            #cv2.waitKey(1) 
+            cv2.imshow('gray',gray) 
+            cv2.imshow('roi_gray1',roi_gray1) 
+            cv2.waitKey(1) 
             #print(thr)
             params_p = cv2.SimpleBlobDetector_Params()
             params_p = get_eclipse_param_iris(params_p)
@@ -262,8 +299,8 @@ def get_eye_position(cap,eyes):
         OS_eye = np.nanpercentile(OS,50,axis = 0)
     else:
         OS_eye = [eyes[1][0], eyes[1][1], 0]
-    eyes = [[int(OD_eye[0]-200),int(OD_eye[1]-150),400,300],
-            [int(OS_eye[0]-200),int(OS_eye[1]-150),400,300]]      
+    eyes = [[int(OD_eye[0]-100),int(OD_eye[1]-75),200,150],
+            [int(OS_eye[0]-100),int(OS_eye[1]-75),200,150]]      
     return np.abs(eyes), OD_eye, OS_eye
 
 #cap = GetVideo(ACT_Task.csv_path)
