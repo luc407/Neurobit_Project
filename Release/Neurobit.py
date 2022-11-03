@@ -229,7 +229,10 @@ class Neurobit():
         self.AL_OS = 25.15
         self.FolderName = []
     def GetFolderPath(self):
-        ID, profile, _, _ = self.GetDxSql()
+# =============================================================================
+#         ID, profile, _, _ = self.GetDxSql()
+# =============================================================================
+        ID, profile, _ = self.GetDxSql()
         f   = open(os.path.join(self.major_path,'ID.ns'), 'r')
         Date = f.readlines()[1].replace('\n','')
         folder      = glob.glob(self.main_path  +
@@ -259,14 +262,20 @@ class Neurobit():
                     "AND [Procedure]='OcularMotility'"
                     "AND [Procedure_ID]='0'")
         visit_ID = np.array(cur.fetchall())[0]
-        cur.execute("SELECT * FROM ExamSheet WHERE [Visit_ID]='" + visit_ID[0] + "'")
-        exam_sheet = np.array(cur.fetchall())[0]
-        return ID, profile, exam_sheet, visit_ID
+# =============================================================================
+#         cur.execute("SELECT * FROM ExamSheet WHERE [Visit_ID]='" + visit_ID[0] + "'")
+#         exam_sheet = np.array(cur.fetchall())[0]
+#         return ID, profile, exam_sheet, visit_ID
+# =============================================================================
+        return ID, profile, visit_ID
     def GetProfile(self, csv_path):
         global CAL_VAL_OD, CAL_VAL_OS
         
         cmd_csv = pd.read_csv(csv_path, dtype=object)
-        ID, profile, exam_sheet, visit_ID = self.GetDxSql()        
+# =============================================================================
+#         ID, profile, exam_sheet, visit_ID = self.GetDxSql()
+# =============================================================================
+        ID, profile, visit_ID = self.GetDxSql()        
         
         self.Task   = cmd_csv.Mode[0]        
         self.ID     = cmd_csv.PatientID[0]              
@@ -293,34 +302,36 @@ class Neurobit():
         self.Age    = str(int(self.Date[:4])-int(self.DoB.replace("/","")[:4]))  
         self.Height = str(profile[8])
         
-        self.Dx         = str(DX[np.where(exam_sheet[3:10]=='True')[0]]) + ", " + exam_sheet[-5] + ", " + visit_ID[-1]
-        self.VA_OD      = str(exam_sheet[11])
-        self.BCVA_OD    = str(exam_sheet[12])
-        self.Ref_OD     = str(exam_sheet[13])
-        self.pupil_OD   = str(exam_sheet[14])
-        try: 
-            self.WTW_OD     = float(exam_sheet[15]) 
-            CAL_VAL_OD      = self.WTW_OD/OD_WTW            
-        except: self.WTW_OD  = np.nan
-        try: self.AL_OD      = float(exam_sheet[16])
-        except: self.AL_OD  = np.nan
-        
-        self.VA_OS      = str(exam_sheet[17])
-        self.BCVA_OS    = str(exam_sheet[18])
-        self.Ref_OS     = str(exam_sheet[19])
-        self.pupil_OS   = str(exam_sheet[20])          
-        try: 
-            self.WTW_OS     = float(exam_sheet[21])
-            CAL_VAL_OS      = self.WTW_OS/OS_WTW            
-        except: self.WTW_OS  = np.nan
-        try: self.AL_OS      = float(exam_sheet[22])
-        except: self.AL_OS  = np.nan
-        
-        self.PD         = str(exam_sheet[23])            
-        self.Hertal_OD  = str(exam_sheet[24])
-        self.Hertal_OS  = str(exam_sheet[25])
-        self.Hertal_Len = str(exam_sheet[26])
-        self.Stereo     = str(exam_sheet[27])
+# =============================================================================
+#         self.Dx         = str(DX[np.where(exam_sheet[3:10]=='True')[0]]) + ", " + exam_sheet[-5] + ", " + visit_ID[-1]
+#         self.VA_OD      = str(exam_sheet[11])
+#         self.BCVA_OD    = str(exam_sheet[12])
+#         self.Ref_OD     = str(exam_sheet[13])
+#         self.pupil_OD   = str(exam_sheet[14])
+#         try: 
+#             self.WTW_OD     = float(exam_sheet[15]) 
+#             CAL_VAL_OD      = self.WTW_OD/OD_WTW            
+#         except: self.WTW_OD  = np.nan
+#         try: self.AL_OD      = float(exam_sheet[16])
+#         except: self.AL_OD  = np.nan
+#         
+#         self.VA_OS      = str(exam_sheet[17])
+#         self.BCVA_OS    = str(exam_sheet[18])
+#         self.Ref_OS     = str(exam_sheet[19])
+#         self.pupil_OS   = str(exam_sheet[20])          
+#         try: 
+#             self.WTW_OS     = float(exam_sheet[21])
+#             CAL_VAL_OS      = self.WTW_OS/OS_WTW            
+#         except: self.WTW_OS  = np.nan
+#         try: self.AL_OS      = float(exam_sheet[22])
+#         except: self.AL_OS  = np.nan
+#         
+#         self.PD         = str(exam_sheet[23])            
+#         self.Hertal_OD  = str(exam_sheet[24])
+#         self.Hertal_OS  = str(exam_sheet[25])
+#         self.Hertal_Len = str(exam_sheet[26])
+#         self.Stereo     = str(exam_sheet[27])
+# =============================================================================
                             
     def GetEyePosition(self):
         cap = GetVideo(self.csv_path)
@@ -332,12 +343,12 @@ class Neurobit():
         OS_x = EYE_ORING[1][0]
         OS_y = EYE_ORING[1][1]
         print(OD_x, OD_y, OS_x, OS_y)
-        if(OD_x-125>0):
-            eyes = [[int(OD_x-125),int(OD_y-100),250,200],
-                           [int(OS_x-125),int(OS_y-100),250,200]]
+        if(OD_x-150>0):
+            eyes = [[int(OD_x-175),int(OD_y-125),350,250],
+                           [int(OS_x-175),int(OS_y-125),350,250]]
         else:
-            eyes = [[0,int(OD_y-100),OD_x*2,200],
-                           [int(OS_x-125),int(OS_y-100),250,200]]
+            eyes = [[0,int(OD_y-125),OD_x*2,250],
+                           [int(OS_x-175),int(OS_y-125),350,250]]
         fourcc = cv2.VideoWriter_fourcc(*'MP42')
         out = cv2.VideoWriter(os.path.join(self.saveVideo_path,self.FileName+'.mp4'),
                           fourcc, 25, (width,height))
@@ -377,17 +388,6 @@ class Neurobit():
                     cv2.waitKey(1)  
                 
                 out.write(frame)
-# =============================================================================
-#                 dOD = np.sum(np.abs(np.array(OD[-1])-OD_pre))
-#                 dOS = np.sum(np.abs(np.array(OS[-1])-OS_pre))
-#                 if np.logical_or(dOD>60, np.isnan(dOD)) and OD_cal_cnt <= 0:
-#                     OD_cal_cnt = 60
-#                     #eyes, OD_pre, OS_pre = get_eye_position(cap,eyes_origin)    
-#                 elif np.logical_or(dOS>60, np.isnan(dOS)) and OD_cal_cnt <= 0 and OS_cal_cnt <= 0:
-#                     OS_cal_cnt = 60
-#                     #eyes, OD_pre, OS_pre = get_eye_position(cap,eyes_origin) 
-#                 OD_cal_cnt-=1; OS_cal_cnt-=1
-# =============================================================================
                 
             else:
                 break    

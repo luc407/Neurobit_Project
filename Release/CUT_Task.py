@@ -386,7 +386,7 @@ class CUT_Task(Neurobit):
         empt=0
         #fig = plt.figure(figsize=(11.7,8.3))
         fig = plt.gcf()
-        fig.set_size_inches(3,5, forward=True)
+        fig.set_size_inches(4.2,6.25, forward=True)
         fig.set_dpi(300)
         for pic in ACT:
             cap = nb.GetVideo(self.csv_path)
@@ -425,7 +425,7 @@ class CUT_Task(Neurobit):
             exec('ax'+str(pic_cont)+ '.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), "gray")')
             exec('ax'+str(pic_cont)+'.axes.xaxis.set_ticks([])')
             exec('ax'+str(pic_cont)+ '.axes.yaxis.set_ticks([])')
-            exec('ax'+str(pic_cont)+ '.set_ylim(int(3*height/4),int(height/4))')
+            exec('ax'+str(pic_cont)+ '.set_ylim(int(9*height/10),int(height/8))')
 # =============================================================================
 #             exec('ax'+str(pic_cont)+ '.set_ylim(int(height),int(0))')
 # =============================================================================

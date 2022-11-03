@@ -21,7 +21,7 @@ def get_eclipse_param_pupil(params):
     params.minThreshold = 65
     params.maxThreshold = 93
     params.blobColor = 225
-    params.minArea = 200
+    params.minArea = 600
     params.maxArea = 6000
     params.filterByCircularity = False
     params.filterByConvexity = True

@@ -219,44 +219,19 @@ class Gaze9_Task(Neurobit):
         for i in range(0,len(nb.GAZE_9_TIME)):
             if AdjCmdTime[nb.GAZE_9_TIME[i]].any():
                 T = nb.GAZE_9_TIME[i]
-# =============================================================================
-#                 for j in range(0,len(AdjCmdTime[nb.GAZE_9_TIME[i]])):
-#                     cap = nb.GetVideo(self.csv_path)
-#                     cap.set(1,AdjCmdTime[nb.GAZE_9_TIME[i]][j])
-#                     ret, im = cap.read()  
-#                     if j%2 == 0 and ret:
-#                         my_gui = EyeTrackSys(self.csv_path,
-#                                              AdjCmdTime[nb.GAZE_9_TIME[i]][j],OD_Gaze9[T][int(j/2)],
-#                                              nb.GAZE_9_TIME[i])
-#                         my_gui.master.mainloop()
-#                         if not np.isnan(my_gui.xy).any():
-#                             self.OD[0][my_gui.pic] = my_gui.xy[0][0]
-#                             self.OD[1][my_gui.pic] = my_gui.xy[0][1]
-#                             OD_Gaze9[T][int(j/2)][0] = my_gui.xy[0][0]
-#                             OD_Gaze9[T][int(j/2)][1] = my_gui.xy[0][1]                            
-#                             AdjCmdTime[nb.GAZE_9_TIME[i]][j] = my_gui.pic
-#                             print(OD_Gaze9[T][int(j/2)][0],OD_Gaze9[T][int(j/2)][1],AdjCmdTime[nb.GAZE_9_TIME[i]][j])
-#                     elif j%2 == 1 and ret:
-#                         my_gui = EyeTrackSys(self.csv_path,
-#                                              AdjCmdTime[nb.GAZE_9_TIME[i]][j],OS_Gaze9[T][int((j-1)/2)],
-#                                              nb.GAZE_9_TIME[i])
-#                         my_gui.master.mainloop()
-#                         if not np.isnan(my_gui.xy).any():
-#                             self.OS[0][my_gui.pic] = my_gui.xy[0][0]
-#                             self.OS[1][my_gui.pic] = my_gui.xy[0][1]
-#                             OS_Gaze9[T][int((j-1)/2)][0] = my_gui.xy[0][0]
-#                             OS_Gaze9[T][int((j-1)/2)][1] = my_gui.xy[0][1]
-#                             AdjCmdTime[nb.GAZE_9_TIME[i]][j] = my_gui.pic
-#                             print(OS_Gaze9[T][int((j-1)/2)][0],OS_Gaze9[T][int((j-1)/2)][1],AdjCmdTime[nb.GAZE_9_TIME[i]][j])
-# =============================================================================
                 if T == 'F':
                     Gaze_9_OD.append(np.nanpercentile(OD_Gaze9[T],50,axis = 0))
                     Gaze_9_OS.append(np.nanpercentile(OS_Gaze9[T],50,axis = 0))
                 else:
-                    diff = abs(OD_Gaze9[T][:,0]-Gaze_9_OD[0][0])+abs(OD_Gaze9[T][:,1]-Gaze_9_OD[0][1])
-                    loc = np.where(diff == np.max(diff))[0][0]
-                    Gaze_9_OD.append(OD_Gaze9[T][loc,:])
-                    Gaze_9_OS.append(OS_Gaze9[T][loc,:])
+                    if len(OD_Gaze9[T])>1:
+                        diff = abs(OD_Gaze9[T][:,0]-Gaze_9_OD[0][0])+abs(OD_Gaze9[T][:,1]-Gaze_9_OD[0][1])
+                        loc = np.where(diff == np.max(diff))[0][0]
+                        Gaze_9_OD.append(OD_Gaze9[T][loc,:])
+                        Gaze_9_OS.append(OS_Gaze9[T][loc,:])
+                    else:
+                        Gaze_9_OD.append(OD_Gaze9[T][0])
+                        Gaze_9_OS.append(OS_Gaze9[T][0])
+                    
                                         
         self.Gaze_9_OD = np.array(np.round(Gaze_9_OD,2))
         self.Gaze_9_OS = np.array(np.round(Gaze_9_OS,2))
@@ -401,7 +376,7 @@ class Gaze9_Task(Neurobit):
         pic_cont = 0
         empt=0
         fig = plt.gcf()
-        fig.set_size_inches(7.2,2.5, forward=True)
+        fig.set_size_inches(10,3.125, forward=True)
         fig.set_dpi(300)
         for pic in Gaze_9:
             if not np.isnan(pic):
@@ -437,7 +412,7 @@ class Gaze9_Task(Neurobit):
                 exec('ax'+str(pic_cont+1)+ '.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY), "gray")')
                 exec('ax'+str(pic_cont+1)+'.axes.xaxis.set_ticks([])')
                 exec('ax'+str(pic_cont+1)+ '.axes.yaxis.set_ticks([])')
-                exec('ax'+str(pic_cont+1)+ '.set_ylim(int(3*height/4),int(height/4))')
+                exec('ax'+str(pic_cont+1)+ '.set_ylim(int(9*height/10),int(height/8))')
 # =============================================================================
 #                 exec('ax'+str(pic_cont+1)+ '.set_ylim(int(height),int(0))')
 # =============================================================================

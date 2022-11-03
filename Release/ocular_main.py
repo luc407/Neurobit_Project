@@ -67,7 +67,7 @@ if __name__== '__main__':
     except: pass#print("No Gaze9_Task!!!")
     """Run Analysis"""
     if IsACT_Task:
-        ACT_task.showVideo = True
+        ACT_task.showVideo = False
         ACT_task.MergeFile()
         ACT_task.Exec()
     else:
@@ -80,7 +80,7 @@ if __name__== '__main__':
         ACT_task.NeurobitDxDev_V = np.nan
         
     if IsCUT_Task:
-        CUT_task.showVideo = True
+        CUT_task.showVideo = False
         CUT_task.MergeFile()
         CUT_task.Exec()
     else:
@@ -93,7 +93,7 @@ if __name__== '__main__':
         CUT_task.NeurobitDxDev_V = np.nan        
         
     if IsGaze9_Task:
-        Gaze9_task.showVideo = True
+        Gaze9_task.showVideo = False
         Gaze9_task.MergeFile()
         if IsACT_Task: Gaze9_task.Exec(ACT_task)   
         else: Gaze9_task.Exec()
@@ -110,21 +110,27 @@ if __name__== '__main__':
     PDF_Header = sub_head("NeuroSpeed")
     if IsACT_Task:
         Subject_Table   = subject_table(ACT_task)
-        Clinic_Table    = clinic_table(ACT_task)
+# =============================================================================
+#         Clinic_Table    = clinic_table(ACT_task)
+# =============================================================================
         pdf_path    = os.path.join(ACT_task.saveReport_path,
                                    ACT_task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
                                    "_OcularMotility.pdf")
         pdf         = CreatePDF(pdf_path)
     elif IsCUT_Task:
         Subject_Table   = subject_table(CUT_task)
-        Clinic_Table    = clinic_table(CUT_task)
+# =============================================================================
+#         Clinic_Table    = clinic_table(CUT_task)
+# =============================================================================
         pdf_path    = os.path.join(CUT_task.saveReport_path, 
                                    CUT_task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
                                    "_OcularMotility.pdf")
         pdf         = CreatePDF(pdf_path)    
     elif IsGaze9_Task:
         Subject_Table   = subject_table(Gaze9_task)
-        Clinic_Table    = clinic_table(Gaze9_task)
+# =============================================================================
+#         Clinic_Table    = clinic_table(Gaze9_task)
+# =============================================================================
         pdf_path    = os.path.join(Gaze9_task.saveReport_path, 
                                    Gaze9_task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
                                    "_OcularMotility.pdf")

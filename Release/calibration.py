@@ -44,11 +44,11 @@ class CalibSystem:
         height = im.shape[0]
         width = im.shape[1]
         
-        self.fig = plt.figure(figsize=(1280/my_dpi, 480/my_dpi), dpi=my_dpi,frameon=False)
+        self.fig = plt.figure(figsize=(width/my_dpi, height/my_dpi), dpi=my_dpi,frameon=False)
         self.ax1 = self.fig.add_axes([0, -0.15, 1, 1.2])
         self.ax1.imshow(im)
         self.ax1.set_xlim(0,width)
-        self.ax1.set_ylim(490,150)        
+        self.ax1.set_ylim(height+10,150)        
         self.ax1.axis('off')
         self.ax1.text(20,460, "OD",fontsize=5)
         self.ax1.text(880,460, "OS",fontsize=5)
@@ -146,7 +146,7 @@ class CalibSystem:
     def done(self):
         self.OD_WTW = abs(self.xy[1][0]-self.xy[2][0])
         self.OS_WTW = abs(self.xy[4][0]-self.xy[5][0])
-        self.master.destroy()
+        self.master.after(10, self.master.destroy)
     
     def nextFrame(self):
         global pic
