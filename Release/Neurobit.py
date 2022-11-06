@@ -192,7 +192,7 @@ class Neurobit():
         self.FolderName = []
     
     def GetFolderPath(self):
-        ID, profile, _ = self.GetDxSql()
+        ID, profile, _, _ = self.GetDxSql()
         f   = open(os.path.join(self.major_path,'ID.ns'), 'r')
         Date = f.readlines()[1].replace('\n','')
         folder      = glob.glob(self.main_path  +
@@ -210,6 +210,7 @@ class Neurobit():
         lines = f.readlines()
         ID  = lines[0].replace('\n','')
         Date = lines[1].replace('\n','')
+        Mode = lines[2].replace('\n','')
         Date = datetime(int(Date[:4]), int(Date[4:6]), int(Date[6:])).strftime('%Y/%m/%d')
         con = sqlite3.connect(os.path.join(self.major_path,"NeurobitNS01-1.db"))
         cur = con.cursor()
@@ -229,13 +230,13 @@ class Neurobit():
 #         exam_sheet = np.array(cur.fetchall())[0]
 #         return ID, profile, exam_sheet, visit_ID
 # =============================================================================
-        return ID, profile, visit_ID
+        return ID, profile, visit_ID, Mode
     
     def GetProfile(self, csv_path):
         global CAL_VAL_OD, CAL_VAL_OS
         
         cmd_csv = pd.read_csv(csv_path, dtype=object)
-        ID, profile, visit_ID = self.GetDxSql()        
+        ID, profile, visit_ID, Mode = self.GetDxSql()        
         
         self.Task   = cmd_csv.Mode[0]        
         self.ID     = cmd_csv.PatientID[0]              
@@ -243,8 +244,9 @@ class Neurobit():
         self.Doctor = visit_ID[3]
         self.Date   = visit_ID[1].replace("/","")[:8]
         
-        if csv_path.split("_")[-1] == "OcularMotility.csv":
+        if csv_path.split("_")[-1] == "OcularMotility.csv" and Mode == "OcularMotility":
             tmp = int(np.where(cmd_csv.PatientID == "Eye")[0]+1)
+            self.OcularMotility = "VideoFrenzel"
             if self.task == 'ACT':
                 self.VoiceCommand = np.array(cmd_csv.PatientID[tmp:], dtype=float)
                 #print("GET VoiceCommand")
@@ -256,6 +258,8 @@ class Neurobit():
                 #print("GET VoiceCommand")
             else:
                 pass#print("Go to make "+self.task+" function!!!")
+        elif Mode == "VideoFrenzel":
+            self.Mode = "VideoFrenzel"
             
         self.Name   = str(profile[2]+","+profile[4])
         self.Gender = str(profile[6])
@@ -332,7 +336,7 @@ class Neurobit():
         self.Preprocessing()
     
     def MergeFile(self):
-        if len(self.session)>1:
+        if len(self.session)>1 and self.Mode == "OcularMotility":
             csv_1 = pd.read_csv(self.session[0], dtype=object)
             videoList = []
             videoList.append(VideoFileClip(self.session[0].replace(".csv",".mp4")))
@@ -349,7 +353,7 @@ class Neurobit():
             self.csv_path = os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".csv")
             self.FileName = self.csv_path.split('\\')[-1].replace(".csv","")
         else:
-            self.csv_path = self.session[0]
+            self.csv_path = self.session[-1]
     
     def GetCommand(self):    
         self.GetProfile(self.csv_path)

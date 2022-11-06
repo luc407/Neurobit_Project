@@ -45,22 +45,22 @@ if __name__== '__main__':
                          [my_gui.xy[3][0],my_gui.xy[3][1]]]
         Subject.GetProfile(csv_path)
         #print(Subject.Task)            
-        if "9 Gaze Motility Test (9Gaze)" in Subject.Task:
+        if "9 Gaze Motility Test (9Gaze)" in Subject.Task and Subject.Mode == "OcularMotility":
             try: Gaze9_task.session.append(csv_path)
             except:
                 Gaze9_task = Gaze9_Task(csv_path)   
                 Gaze9_task.session.append(csv_path)
-        elif "Alternate Cover" in Subject.Task:
+        elif "Alternate Cover" in Subject.Task and Subject.Mode == "OcularMotility":
             try: ACT_task.session.append(csv_path)
             except:
                 ACT_task = ACT_Task(csv_path)  
                 ACT_task.session.append(csv_path)
-        elif "Cover/Uncover Test (CUT)" in Subject.Task:
+        elif "Cover/Uncover Test (CUT)" in Subject.Task and Subject.Mode == "OcularMotility":
             try: CUT_task.session.append(csv_path)
             except:
                 CUT_task = CUT_Task(csv_path)  
                 CUT_task.session.append(csv_path)
-        elif "Video Frenzel" in Subject.Task:
+        elif "Video Frenzel" in Subject.Task and Subject.Mode == "VideoFrenzel":
             try: VF_task.session.append(csv_path)
             except:
                 VF_task = VF_Task(csv_path)  
@@ -69,13 +69,13 @@ if __name__== '__main__':
             pass
     
     try: ACT_task; IsACT_Task = True
-    except: pass#print("No ACT_Task!!!")
+    except: pass
     try: CUT_task; IsCUT_Task = True
-    except: pass#print("No ACT_Task!!!")
+    except: pass
     try: Gaze9_task; IsGaze9_Task = True
-    except: pass#print("No Gaze9_Task!!!")
+    except: pass
     try: VF_task; IsVF_Task = True
-    except: pass#print("No Gaze9_Task!!!")
+    except: pass
     """Run Analysis"""
     if IsACT_Task:
         ACT_task.showVideo = False
@@ -172,8 +172,7 @@ if __name__== '__main__':
     if IsVF_Task:
         Subject_Table   = subject_table(VF_task)
         pdf_path    = os.path.join(VF_task.saveReport_path,
-                                   datetime.now().strftime("%Y%m%d")+"_"+datetime.now().strftime("%H%M%S")+"_"+
-                                   VF_task.FolderName.split("_")[-1]+"_VideoFrenzel.pdf")
+                                   VF_task.FileName+".pdf")
         pdf         = CreatePDF(pdf_path)                
         Element = []
         Element.append(PDF_Header)
@@ -227,5 +226,7 @@ if __name__== '__main__':
     """', '""" + str(VF_task.result['Mean']['Diff']) + """', '""" + str(VF_task.result['Min']['Diff']) + """', '""" + str(VF_task.result['Min']['Diff']) + """', '""" + str(VF_task.result['Std']['Diff']) + """')""")
     con.commit()
 
-    shutil.rmtree(Subject.save_path)
+# =============================================================================
+#     shutil.rmtree(Subject.save_path)
+# =============================================================================
 

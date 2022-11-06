@@ -7,7 +7,11 @@ Created on Sun Nov  6 10:23:22 2022
 
 import os
 import cv2
+import time as ts
 import numpy as np
+from reportlab.lib.units import inch
+from reportlab.platypus import BaseDocTemplate, Image, Paragraph, Table, TableStyle, PageBreak, \
+    Frame, PageTemplate, NextPageTemplate,Spacer 
 import Neurobit as nb
 from Neurobit import Neurobit
 from scipy import stats
@@ -38,8 +42,9 @@ class VF_Task(Neurobit):
         self.GetProfile(self.csv_path)
         self.GetEyePosition()
         self.FeatureExtraction()
+        
         self.DrawEyeTrack()
-        self.DrawPupil()
+        self.DrawPupil()            
     
     def FeatureExtraction(self):
         pupil_size_OD_All = self.OD[2,:]
@@ -104,7 +109,7 @@ class VF_Task(Neurobit):
         
     def DrawEyeTrack(self):
         OD = self.OD; OS = self.OS
-        time = np.array(range(0,len(OD[0])))/25
+        time = np.array(range(0,len(OD[0])))/30
         plt.rcParams["figure.figsize"] = (nb.TABLE_WIDTH*1.5, nb.TABLE_WIDTH *3/5)
         plt.rcParams["font.family"] = "Arial"           
         for i in range(0,2):
@@ -141,10 +146,11 @@ class VF_Task(Neurobit):
             plt.yticks()
         plt.tight_layout()
         plt.savefig(os.path.join(self.saveImage_path,"DrawEyeTrack.png"), dpi=300, bbox_inches = 'tight')
-        plt.close()
+        print("DrawEyeTrack")
+        plt.clf()
     def DrawPupil(self):
         OD = self.OD; OS = self.OS
-        time = np.array(range(0,len(OD[0])))/25
+        time = np.array(range(0,len(OD[0])))/30
         plt.rcParams["figure.figsize"] = (nb.TABLE_WIDTH*1.5, nb.TABLE_WIDTH *3/10)
         plt.rcParams["font.family"] = "Arial"           
         plt.plot(time,OD[2,:]*nb.CAL_VAL_OD, nb.line_color_palatte['reds'][2], linewidth=0.5)
@@ -156,7 +162,8 @@ class VF_Task(Neurobit):
         plt.xlabel('Time (s)')
         plt.legend(['OD', 'OS'], fontsize=8)
         plt.savefig(os.path.join(self.saveImage_path,"DrawPupil.png"), dpi=300, bbox_inches = 'tight')
-        plt.close()
+        print("DrawPupil")
+        plt.clf()
     def DrawTextVideo(self, frame, frame_cnt):
         width = frame.shape[1]
         
