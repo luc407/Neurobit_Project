@@ -26,9 +26,8 @@ class Gaze9_Task(Neurobit):
         self.FolderName = csv_path.split('\\')[-2]
         self.FileName = csv_path.split('\\')[-1].replace(".csv","")
         self.main_path = csv_path.replace("\\"+csv_path.split('\\')[-2],"").replace("\\"+csv_path.split('\\')[-1],"")
-        self.DB_path = os.path.abspath(self.main_path+"\\../..")
         self.save_MainPath = self.save_path+"\\"+self.FolderName
-        self.saveReport_path = self.save_MainPath
+        self.saveReport_path = self.main_path
         self.saveMerge_path = self.save_MainPath+"\\"+self.task
         self.saveVideo_path = self.save_MainPath+"\\"+self.task+"\\HoughCircle"
         self.saveImage_path = self.save_MainPath+"\\"+self.task+"\\Image"              
@@ -258,10 +257,6 @@ class Gaze9_Task(Neurobit):
             PD_OS = nb.trans_AG(self.AL_OS,np.array([diff_OS_x, diff_OS_y]),nb.CAL_VAL_OS)
             NeurobitDxDev_H.append([PD_OD[0], PD_OS[0]])
             NeurobitDxDev_V.append([PD_OD[1], PD_OS[1]])
-            nb.Gaze9_Save._Gaze9_dx[nb.GAZE_9_TIME[i]+'_OD_H_Dev'].append(PD_OD[0])
-            nb.Gaze9_Save._Gaze9_dx[nb.GAZE_9_TIME[i]+'_OS_H_Dev'].append(PD_OS[0])
-            nb.Gaze9_Save._Gaze9_dx[nb.GAZE_9_TIME[i]+'_OD_V_Dev'].append(PD_OD[1])
-            nb.Gaze9_Save._Gaze9_dx[nb.GAZE_9_TIME[i]+'_OS_V_Dev'].append(PD_OS[1])
         self.NeurobitDxDev_H = np.round(np.array(NeurobitDxDev_H),2)
         self.NeurobitDxDev_V = np.round(np.array(NeurobitDxDev_V),2)
         
@@ -275,11 +270,6 @@ class Gaze9_Task(Neurobit):
         b = self.NeurobitDxDev_V.transpose()[1][nb.GAZE_9_BOARDER]
         xy = np.array([a,b]).transpose()
         OS_Area = np.round(nb.enclosed_area(xy),2)
-        
-        nb.Gaze9_Save._Gaze9_dx['ID'].append(self.ID)
-        nb.Gaze9_Save._Gaze9_dx['Date'].append(self.FolderName.split('_')[0])
-        nb.Gaze9_Save._Gaze9_dx['OD_Area'].append(OD_Area)
-        nb.Gaze9_Save._Gaze9_dx['OS_Area'].append(OS_Area)       
     def SeperateSession(self):
         OD = self.OD; OS = self.OS
         for i in range(0,len(nb.GAZE_9_TIME)):

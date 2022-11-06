@@ -15,30 +15,38 @@ import Neurobit
 from Gaze9_Task import Gaze9_Task
 from ACT_Task import ACT_Task
 from CUT_Task import CUT_Task
+from VF_Task import VF_Task
 from Neurobit import Neurobit as NB
 from datetime import datetime
 from reportlab.platypus import BaseDocTemplate, Image, Paragraph, Table, TableStyle, PageBreak, \
     Frame, PageTemplate, NextPageTemplate,Spacer
 from function_PlotReport import main_head, sub_head, con_text, subject_table,\
-    clinic_table, diagnose_table, quality_bar, foot1, ACTReport, CreatePDF, Gaze9Report, CUTReport
+    clinic_table, diagnose_table, quality_bar, foot1, ACTReport, CreatePDF, Gaze9Report, CUTReport, VFReport
 from calibration import CalibSystem
+from reportlab.lib.units import inch
 
 main_path = os.getcwd()
 Subject = NB()
         
 if __name__== '__main__':    
     csv_files = Subject.GetSubjectFiles(main_path) 
-    IsACT_Task = False; IsGaze9_Task = False; IsCUT_Task = False;IsCalibrated = False;
+    IsACT_Task      = False; 
+    IsGaze9_Task    = False; 
+    IsCUT_Task      = False;
+    IsVF_Task      = False;
+    IsCalibrated    = False;
     for csv_path in csv_files:
-        if not IsCalibrated:
-            root = tk.Tk()
-            my_gui = CalibSystem(root, csv_path)
-            root.mainloop()
-            IsCalibrated = True
-            Neurobit.OD_WTW = my_gui.OD_WTW
-            Neurobit.OS_WTW = my_gui.OS_WTW
-            Neurobit.EYE_ORING = [[my_gui.xy[0][0],my_gui.xy[0][1]],
-                         [my_gui.xy[3][0],my_gui.xy[3][1]]]
+# =============================================================================
+#         if not IsCalibrated:
+#             root = tk.Tk()
+#             my_gui = CalibSystem(root, csv_path)
+#             root.mainloop()
+#             IsCalibrated = True
+#             Neurobit.OD_WTW = my_gui.OD_WTW
+#             Neurobit.OS_WTW = my_gui.OS_WTW
+#             Neurobit.EYE_ORING = [[my_gui.xy[0][0],my_gui.xy[0][1]],
+#                          [my_gui.xy[3][0],my_gui.xy[3][1]]]
+# =============================================================================
         Subject.GetProfile(csv_path)
         #print(Subject.Task)            
         if "9 Gaze Motility Test (9Gaze)" in Subject.Task:
@@ -56,6 +64,11 @@ if __name__== '__main__':
             except:
                 CUT_task = CUT_Task(csv_path)  
                 CUT_task.session.append(csv_path)
+        elif "Video Frenzel" in Subject.Task:
+            try: VF_task.session.append(csv_path)
+            except:
+                VF_task = VF_Task(csv_path)  
+                VF_task.session.append(csv_path)
         else:
             pass
     
@@ -64,6 +77,8 @@ if __name__== '__main__':
     try: CUT_task; IsCUT_Task = True
     except: pass#print("No ACT_Task!!!")
     try: Gaze9_task; IsGaze9_Task = True
+    except: pass#print("No Gaze9_Task!!!")
+    try: VF_task; IsVF_Task = True
     except: pass#print("No Gaze9_Task!!!")
     """Run Analysis"""
     if IsACT_Task:
@@ -105,32 +120,30 @@ if __name__== '__main__':
         Gaze9_task.NeurobitDxDev_V = np.empty([9,2])*np.nan
         Gaze9_task.Diff_H = np.empty([9,2])*np.nan
         Gaze9_task.Diff_V = np.empty([9,2])*np.nan
-        
-    """Plot Report"""    
+     
+    if IsVF_Task:
+        VF_task.showVideo = False
+        VF_task.MergeFile()
+        VF_task.Exec()
+    else:
+        VF_task = VF_task(csv_path)  
+
+    """Plot Eye Report"""    
     PDF_Header = sub_head("NeuroSpeed")
     if IsACT_Task:
         Subject_Table   = subject_table(ACT_task)
-# =============================================================================
-#         Clinic_Table    = clinic_table(ACT_task)
-# =============================================================================
         pdf_path    = os.path.join(ACT_task.saveReport_path,
                                    ACT_task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
                                    "_OcularMotility.pdf")
         pdf         = CreatePDF(pdf_path)
     elif IsCUT_Task:
         Subject_Table   = subject_table(CUT_task)
-# =============================================================================
-#         Clinic_Table    = clinic_table(CUT_task)
-# =============================================================================
         pdf_path    = os.path.join(CUT_task.saveReport_path, 
                                    CUT_task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
                                    "_OcularMotility.pdf")
         pdf         = CreatePDF(pdf_path)    
     elif IsGaze9_Task:
         Subject_Table   = subject_table(Gaze9_task)
-# =============================================================================
-#         Clinic_Table    = clinic_table(Gaze9_task)
-# =============================================================================
         pdf_path    = os.path.join(Gaze9_task.saveReport_path, 
                                    Gaze9_task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
                                    "_OcularMotility.pdf")
@@ -157,39 +170,53 @@ if __name__== '__main__':
 
         pdf.build(Element)
         subprocess.Popen(pdf_path, shell=True)
+    
+    """Plot Nerve Report"""  
+    PDF_Header = sub_head("NeuroSpeed")
+    if IsVF_Task:
+        Subject_Table   = subject_table(VF_task)
+        pdf_path    = os.path.join(VF_task.saveReport_path,
+                                   VF_task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
+                                   "_VideoFrenzel.pdf")
+        pdf         = CreatePDF(pdf_path)                
+        Element = []
+        Element.append(PDF_Header)
+        Element.append(Spacer(1, inch * 0.10))
+        Element.append(Subject_Table)
+        Element.append(Spacer(1, inch * 0.10))
+        VFReport(Element, VF_task)
+        pdf.build(Element)
+        subprocess.Popen(pdf_path, shell=True)
+    
+    """Uupdate NeurobitNS01-1.db"""
+    con = sqlite3.connect(os.path.join(main_path, 'NeurobitNS01-1.db'))
+    cur = con.cursor()
+    lastconnection = datetime.strptime(Subject.Date, "%Y%m%d").strftime('%Y/%m/%d')
+    cur.execute("SELECT [Procedure_ID] FROM Visit WHERE [Datetime]='" + lastconnection + "' AND [Patient_ID]='" + Subject.ID + "' AND [Examiner_ID]='" + Subject.Doctor + "' AND [Procedure]='OcularMotility'")
+    procedure_ID = str(cur.fetchall()[-1][0]+1)
+    cur.execute("INSERT INTO Visit VALUES(null, '" + lastconnection + "', '" + Subject.ID + "', '" + Subject.Doctor + "', 'OcularMotility', '" + procedure_ID + "', null)")
+    cur.execute("SELECT [ID] FROM Visit WHERE [Datetime]='" + lastconnection + "' AND [Patient_ID]='" + Subject.ID + "' AND [Examiner_ID]='" + Subject.Doctor + "' AND [Procedure]='OcularMotility' AND [procedure_ID]='" + procedure_ID + "'")
+    Visit_ID = str(cur.fetchall()[-1][0])
+    cur.execute("""INSERT INTO OcularMotility VALUES(null, '""" + Visit_ID + """', null, null, null, null""" +
+    """, '""" + str(ACT_task.miss_OD) + """', '""" + str(ACT_task.miss_OS) + """', '""" + str(ACT_task.NeurobitDx_H) + """', '""" + str(ACT_task.NeurobitDx_V) + """', '""" + str(ACT_task.NeurobitDxDev_H) + """', '""" + str(ACT_task.NeurobitDxDev_V) + 
+    """', '""" + str(CUT_task.miss_OD) + """', '""" + str(CUT_task.miss_OS) + """', '""" + str(CUT_task.NeurobitDx_H) + """', '""" + str(CUT_task.NeurobitDx_V) + """', '""" + str(CUT_task.NeurobitDxDev_H) + """', '""" + str(CUT_task.NeurobitDxDev_V) + 
+    """', '""" + str(Gaze9_task.miss_OD) + """', '""" + str(Gaze9_task.miss_OS) + 
+    """', '""" + str(Gaze9_task.NeurobitDxDev_H[0][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[0][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[1][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[1][0]) + 
+    """', '""" + str(Gaze9_task.NeurobitDxDev_H[2][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[2][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[3][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[3][0]) + 
+    """', '""" + str(Gaze9_task.NeurobitDxDev_H[4][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[4][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[5][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[5][0]) + 
+    """', '""" + str(Gaze9_task.NeurobitDxDev_H[6][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[6][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[7][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[7][0]) + 
+    """', '""" + str(Gaze9_task.NeurobitDxDev_H[8][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[8][0]) +
+    """', '""" + str(Gaze9_task.NeurobitDxDev_H[0][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[0][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[1][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[1][1]) + 
+    """', '""" + str(Gaze9_task.NeurobitDxDev_H[2][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[2][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[3][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[3][1]) + 
+    """', '""" + str(Gaze9_task.NeurobitDxDev_H[4][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[4][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[5][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[5][1]) + 
+    """', '""" + str(Gaze9_task.NeurobitDxDev_H[6][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[6][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[7][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[7][1]) + 
+    """', '""" + str(Gaze9_task.NeurobitDxDev_H[8][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[8][1]) +
+    """', '""" + str(np.round(Gaze9_task.Diff_H[0],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[0],1)) + """', '""" + str(np.round(Gaze9_task.Diff_H[1],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[1],1)) + 
+    """', '""" + str(np.round(Gaze9_task.Diff_H[2],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[2],1)) + """', '""" + str(np.round(Gaze9_task.Diff_H[3],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[3],1)) + 
+    """', '""" + str(np.round(Gaze9_task.Diff_H[4],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[4],1)) + """', '""" + str(np.round(Gaze9_task.Diff_H[5],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[5],1)) + 
+    """', '""" + str(np.round(Gaze9_task.Diff_H[6],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[6],1)) + """', '""" + str(np.round(Gaze9_task.Diff_H[7],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[7],1)) + 
+    """', '""" + str(np.round(Gaze9_task.Diff_H[8],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[8],1)) + """')""")
+    con.commit()
+    
+    shutil.rmtree(Subject.save_path)
 
-        con = sqlite3.connect(os.path.join(main_path, 'NeurobitNS01-1.db'))
-        cur = con.cursor()
-        lastconnection = datetime.strptime(Subject.Date, "%Y%m%d").strftime('%Y/%m/%d')
-        cur.execute("SELECT [Procedure_ID] FROM Visit WHERE [Datetime]='" + lastconnection + "' AND [Patient_ID]='" + Subject.ID + "' AND [Examiner_ID]='" + Subject.Doctor + "' AND [Procedure]='OcularMotility'")
-        procedure_ID = str(cur.fetchall()[-1][0]+1)
-        cur.execute("INSERT INTO Visit VALUES(null, '" + lastconnection + "', '" + Subject.ID + "', '" + Subject.Doctor + "', 'OcularMotility', '" + procedure_ID + "', null)")
-        cur.execute("SELECT [ID] FROM Visit WHERE [Datetime]='" + lastconnection + "' AND [Patient_ID]='" + Subject.ID + "' AND [Examiner_ID]='" + Subject.Doctor + "' AND [Procedure]='OcularMotility' AND [procedure_ID]='" + procedure_ID + "'")
-        Visit_ID = str(cur.fetchall()[-1][0])
-        cur.execute("""INSERT INTO OcularMotility VALUES(null, '""" + Visit_ID + """', null, null, null, null""" +
-        """, '""" + str(ACT_task.miss_OD) + """', '""" + str(ACT_task.miss_OS) + """', '""" + str(ACT_task.NeurobitDx_H) + """', '""" + str(ACT_task.NeurobitDx_V) + """', '""" + str(ACT_task.NeurobitDxDev_H) + """', '""" + str(ACT_task.NeurobitDxDev_V) + 
-        """', '""" + str(CUT_task.miss_OD) + """', '""" + str(CUT_task.miss_OS) + """', '""" + str(CUT_task.NeurobitDx_H) + """', '""" + str(CUT_task.NeurobitDx_V) + """', '""" + str(CUT_task.NeurobitDxDev_H) + """', '""" + str(CUT_task.NeurobitDxDev_V) + 
-        """', '""" + str(Gaze9_task.miss_OD) + """', '""" + str(Gaze9_task.miss_OS) + 
-        """', '""" + str(Gaze9_task.NeurobitDxDev_H[0][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[0][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[1][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[1][0]) + 
-        """', '""" + str(Gaze9_task.NeurobitDxDev_H[2][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[2][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[3][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[3][0]) + 
-        """', '""" + str(Gaze9_task.NeurobitDxDev_H[4][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[4][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[5][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[5][0]) + 
-        """', '""" + str(Gaze9_task.NeurobitDxDev_H[6][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[6][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[7][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[7][0]) + 
-        """', '""" + str(Gaze9_task.NeurobitDxDev_H[8][0]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[8][0]) +
-        """', '""" + str(Gaze9_task.NeurobitDxDev_H[0][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[0][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[1][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[1][1]) + 
-        """', '""" + str(Gaze9_task.NeurobitDxDev_H[2][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[2][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[3][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[3][1]) + 
-        """', '""" + str(Gaze9_task.NeurobitDxDev_H[4][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[4][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[5][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[5][1]) + 
-        """', '""" + str(Gaze9_task.NeurobitDxDev_H[6][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[6][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_H[7][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[7][1]) + 
-        """', '""" + str(Gaze9_task.NeurobitDxDev_H[8][1]) + """', '""" + str(Gaze9_task.NeurobitDxDev_V[8][1]) +
-        """', '""" + str(np.round(Gaze9_task.Diff_H[0],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[0],1)) + """', '""" + str(np.round(Gaze9_task.Diff_H[1],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[1],1)) + 
-        """', '""" + str(np.round(Gaze9_task.Diff_H[2],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[2],1)) + """', '""" + str(np.round(Gaze9_task.Diff_H[3],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[3],1)) + 
-        """', '""" + str(np.round(Gaze9_task.Diff_H[4],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[4],1)) + """', '""" + str(np.round(Gaze9_task.Diff_H[5],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[5],1)) + 
-        """', '""" + str(np.round(Gaze9_task.Diff_H[6],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[6],1)) + """', '""" + str(np.round(Gaze9_task.Diff_H[7],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[7],1)) + 
-        """', '""" + str(np.round(Gaze9_task.Diff_H[8],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[8],1)) + """')""")
-        con.commit()
-        
-        try: shutil.rmtree(ACT_task.save_MainPath+"\\"+ACT_task.task)
-        except: pass
-        try: shutil.rmtree(CUT_task.save_MainPath+"\\"+CUT_task.task)
-        except: pass
-        try: shutil.rmtree(Gaze9_task.save_MainPath+"\\"+Gaze9_task.task)
-        except: pass

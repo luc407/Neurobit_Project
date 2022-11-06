@@ -20,6 +20,8 @@ from matplotlib import pyplot as plt
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from datetime import datetime
 from function_eye_capture import capture_eye_pupil
+from reportlab.lib.units import inch
+from reportlab.lib.pagesizes import A4
 
 EYE         = ['OD','OS']
 ACT         = 'ACT'
@@ -81,15 +83,23 @@ line_color_palatte = {'greens':["#A5F5B3", "#51F46D",   "#00F62B", "#008D19", "#
                       'oranges':["#FFD6AC", "#FFAC54", "#FF8300", "#B95F00", "#653400"],             
                       'reds':["#FFB2AC", "#FF6154", "#FF1300", "#B90D00", "#650700"],                 
                       'blues':["#A4DCEF", "#54C8EE", "#03B5F0", "#015773", "#012F3F"]}
-
+# report margin design
+GAZE_TABLE_WIDTH = 3.6   # inch
+H_MARGIN = 36
+T_MARGIN = 30
+B_MARGIN = 18
+P_MARGIN = 10
+CHART_TEXT_SIZE = 7
+TABLE_WIDTH =  (A4[0]-2*H_MARGIN)/inch  # inch
+TABLE_HEIGHT =  (A4[1]-T_MARGIN-B_MARGIN)/inch  # inch
 
 global OD_WTW, OS_WTW, CAL_VAL_OD, CAL_VAL_OS, EYE_ORING
 OD_WTW = 0; 
 OS_WTW = 0;
 CAL_VAL_OD = 5/33;
 CAL_VAL_OS = 5/33;
-EYE_ORING = [[0,0],
-             [0,0]]
+EYE_ORING = [[354,270],
+             [998,253]]
 
 def enclosed_area(xy):
     """ 
@@ -166,53 +176,6 @@ def DrawEyePosition(frame, eyes, OD_p, OS_p):
         cv2.circle(frame,(int(OS_p[0]),int(OS_p[1])),
                    int(OS_p[2]),
                    (255,255,255),2)
-
-def nan_helper(y):
-    """Helper to handle indices and logical indices of NaNs.
-
-    Input:
-        - y, 1d numpy array with possible NaNs
-    Output:
-        - nans, logical indices of NaNs
-        - index, a function, with signature indices= index(logical_indices),
-          to convert logical indices of NaNs to 'equivalent' indices
-    Example:
-        >>> # linear interpolation of NaNs
-        >>> nans, x= nan_helper(y)
-        >>> y[nans]= np.interp(x(nans), x(~nans), y[~nans])
-    """
-
-    return np.isnan(y), lambda z: z.nonzero()[0]
-
-class ACT_Save(object):
-    _ACT_dx = {'ID':[],
-          'Date':[],
-          'H_Dx':[],
-          'H_Dev':[],
-          'H_type':[],
-          'V_Dx':[],
-          'V_Dev':[],
-          }
-    
-class Gaze9_Save(object):
-    _Gaze9_dx = {'ID':[],'Date':[]}
-    for i in range(0,len(GAZE_9_TIME)):
-        _Gaze9_dx[GAZE_9_TIME[i]+'_OD_H_Dev'] = []
-        _Gaze9_dx[GAZE_9_TIME[i]+'_OS_H_Dev'] = []
-        _Gaze9_dx[GAZE_9_TIME[i]+'_OD_V_Dev'] = []
-        _Gaze9_dx[GAZE_9_TIME[i]+'_OS_V_Dev'] = []
-    _Gaze9_dx['OD_Area'] = []
-    _Gaze9_dx['OS_Area'] = []
-    
-class CUT_Save(object):
-    _CUT_dx = {'ID':[],
-               'Date':[],
-          'H_Dx':[],
-          'H_Dev':[],
-          'H_type':[],
-          'V_Dx':[],
-          'V_Dev':[],
-          }
     
 class Neurobit():
     def __init__(self):
@@ -220,18 +183,15 @@ class Neurobit():
         self.task = str("Subject")
         self.session = []
         self.major_path = os.getcwd()
-        self.save_path = os.getcwd()+"\\RESULT\\Version"+self.version
-        self.saveVideo_path = []
+        self.save_path = os.getcwd()+"\\RESULT\\Version"+self.version   # temporary save path
         self.DB_path = []
         self.CmdTime = []
         self.showVideo = True
         self.AL_OD = 25.15
         self.AL_OS = 25.15
         self.FolderName = []
+    
     def GetFolderPath(self):
-# =============================================================================
-#         ID, profile, _, _ = self.GetDxSql()
-# =============================================================================
         ID, profile, _ = self.GetDxSql()
         f   = open(os.path.join(self.major_path,'ID.ns'), 'r')
         Date = f.readlines()[1].replace('\n','')
@@ -240,9 +200,11 @@ class Neurobit():
                                 ID + "\\"       +
                                 str(Date+"*"+ ID))[0]
         return folder
+    
     def GetSubjectFiles(self, main_path):          
         self.main_path  = main_path
-        return glob.glob(self.GetFolderPath()+"\*OcularMotility.csv")
+        return glob.glob(self.GetFolderPath()+"\*.csv")
+    
     def GetDxSql(self):
         f   = open(os.path.join(self.major_path,'ID.ns'), 'r')
         lines = f.readlines()
@@ -268,13 +230,11 @@ class Neurobit():
 #         return ID, profile, exam_sheet, visit_ID
 # =============================================================================
         return ID, profile, visit_ID
+    
     def GetProfile(self, csv_path):
         global CAL_VAL_OD, CAL_VAL_OS
         
         cmd_csv = pd.read_csv(csv_path, dtype=object)
-# =============================================================================
-#         ID, profile, exam_sheet, visit_ID = self.GetDxSql()
-# =============================================================================
         ID, profile, visit_ID = self.GetDxSql()        
         
         self.Task   = cmd_csv.Mode[0]        
@@ -283,55 +243,25 @@ class Neurobit():
         self.Doctor = visit_ID[3]
         self.Date   = visit_ID[1].replace("/","")[:8]
         
-        tmp = int(np.where(cmd_csv.PatientID == "Eye")[0]+1)
-        if self.task == 'ACT':
-            self.VoiceCommand = np.array(cmd_csv.PatientID[tmp:], dtype=float)
-            #print("GET VoiceCommand")
-        elif self.task == '9_Gaze':
-            self.VoiceCommand = np.array([cmd_csv.ExaminerID[tmp:],cmd_csv.Device[tmp:],cmd_csv.PatientID[tmp:]], dtype=float)
-            #print("GET VoiceCommand")
-        elif self.task == 'CUT':
-            self.VoiceCommand = np.array(cmd_csv.PatientID[tmp:], dtype=float)
-            #print("GET VoiceCommand")
-        else:
-            pass#print("Go to make "+self.task+" function!!!")
-        
+        if csv_path.split("_")[-1] == "OcularMotility.csv":
+            tmp = int(np.where(cmd_csv.PatientID == "Eye")[0]+1)
+            if self.task == 'ACT':
+                self.VoiceCommand = np.array(cmd_csv.PatientID[tmp:], dtype=float)
+                #print("GET VoiceCommand")
+            elif self.task == '9_Gaze':
+                self.VoiceCommand = np.array([cmd_csv.ExaminerID[tmp:],cmd_csv.Device[tmp:],cmd_csv.PatientID[tmp:]], dtype=float)
+                #print("GET VoiceCommand")
+            elif self.task == 'CUT':
+                self.VoiceCommand = np.array(cmd_csv.PatientID[tmp:], dtype=float)
+                #print("GET VoiceCommand")
+            else:
+                pass#print("Go to make "+self.task+" function!!!")
+            
         self.Name   = str(profile[2]+","+profile[4])
         self.Gender = str(profile[6])
         self.DoB    = str(profile[7])
         self.Age    = str(int(self.Date[:4])-int(self.DoB.replace("/","")[:4]))  
         self.Height = str(profile[8])
-        
-# =============================================================================
-#         self.Dx         = str(DX[np.where(exam_sheet[3:10]=='True')[0]]) + ", " + exam_sheet[-5] + ", " + visit_ID[-1]
-#         self.VA_OD      = str(exam_sheet[11])
-#         self.BCVA_OD    = str(exam_sheet[12])
-#         self.Ref_OD     = str(exam_sheet[13])
-#         self.pupil_OD   = str(exam_sheet[14])
-#         try: 
-#             self.WTW_OD     = float(exam_sheet[15]) 
-#             CAL_VAL_OD      = self.WTW_OD/OD_WTW            
-#         except: self.WTW_OD  = np.nan
-#         try: self.AL_OD      = float(exam_sheet[16])
-#         except: self.AL_OD  = np.nan
-#         
-#         self.VA_OS      = str(exam_sheet[17])
-#         self.BCVA_OS    = str(exam_sheet[18])
-#         self.Ref_OS     = str(exam_sheet[19])
-#         self.pupil_OS   = str(exam_sheet[20])          
-#         try: 
-#             self.WTW_OS     = float(exam_sheet[21])
-#             CAL_VAL_OS      = self.WTW_OS/OS_WTW            
-#         except: self.WTW_OS  = np.nan
-#         try: self.AL_OS      = float(exam_sheet[22])
-#         except: self.AL_OS  = np.nan
-#         
-#         self.PD         = str(exam_sheet[23])            
-#         self.Hertal_OD  = str(exam_sheet[24])
-#         self.Hertal_OS  = str(exam_sheet[25])
-#         self.Hertal_Len = str(exam_sheet[26])
-#         self.Stereo     = str(exam_sheet[27])
-# =============================================================================
                             
     def GetEyePosition(self):
         cap = GetVideo(self.csv_path)
@@ -400,6 +330,7 @@ class Neurobit():
         self.OD = np.array(OD).transpose()
         self.OS = np.array(OS).transpose()
         self.Preprocessing()
+    
     def MergeFile(self):
         if len(self.session)>1:
             csv_1 = pd.read_csv(self.session[0], dtype=object)
@@ -419,10 +350,12 @@ class Neurobit():
             self.FileName = self.csv_path.split('\\')[-1].replace(".csv","")
         else:
             self.csv_path = self.session[0]
+    
     def GetCommand(self):    
         self.GetProfile(self.csv_path)
         self.GetTimeFromCmd()
         self.IsVoiceCommand = True
+    
     def Save2Cloud(self):
         gauth = GoogleAuth()       
         drive = GoogleDrive(gauth) 
@@ -440,6 +373,7 @@ class Neurobit():
             for file in file_list:
                 if file['title'] == self.FileName+".mp4":
                     NotUpdated = False        
+    
     def DrawQRCode(self):
         os.chdir(self.major_path)
         gauth = GoogleAuth()       
@@ -451,6 +385,7 @@ class Neurobit():
                 self.website =file['alternateLink']
         img = qrcode.make(self.website)
         img.save(os.path.join(self.saveImage_path,"QR_code.png"))
+    
     def Preprocessing(self):
         win = 15        # window         
         # median moving window

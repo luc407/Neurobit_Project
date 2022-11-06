@@ -275,14 +275,7 @@ class CUT_Task(Neurobit):
             self.NeurobitDx_V = self.NeurobitDx_V +" & "+ "OS H"
             self.NeurobitDxDev_V = np.append(self.NeurobitDxDev_V, abs(OS_phoria[1]))
         else: self.NeurobitDxDev_V = np.append(self.NeurobitDxDev_V,0)
-        
-        nb.CUT_Save._CUT_dx['ID'].append(self.ID)
-        nb.CUT_Save._CUT_dx['Date'].append(self.FolderName.split('_')[0])
-        nb.CUT_Save._CUT_dx['H_Dx'].append(self.NeurobitDx_H)
-        nb.CUT_Save._CUT_dx['H_Dev'].append(self.NeurobitDxDev_H)
-        nb.CUT_Save._CUT_dx['H_type'].append(self.NeurobitDxTp_X)
-        nb.CUT_Save._CUT_dx['V_Dx'].append(self.NeurobitDx_V)
-        nb.CUT_Save._CUT_dx['V_Dev'].append(self.NeurobitDxDev_V)
+    
     def GetTimeFromCmd(self):
         cmd = self.VoiceCommand
         O_t = np.where(cmd==0)[0]

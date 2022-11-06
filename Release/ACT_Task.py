@@ -20,9 +20,8 @@ class ACT_Task(Neurobit):
         self.FolderName = csv_path.split('\\')[-2]
         self.FileName = csv_path.split('\\')[-1].replace(".csv","")
         self.main_path = csv_path.replace("\\"+csv_path.split('\\')[-2],"").replace("\\"+csv_path.split('\\')[-1],"")
-        self.DB_path = os.path.abspath(self.main_path+"\\../..")
         self.save_MainPath = self.save_path+"\\"+self.FolderName
-        self.saveReport_path = self.save_MainPath
+        self.saveReport_path = self.main_path
         self.saveMerge_path = self.save_MainPath+"\\"+self.task
         self.saveVideo_path = self.save_MainPath+"\\"+self.task+"\\HoughCircle"
         self.saveImage_path = self.save_MainPath+"\\"+self.task+"\\Image"              
@@ -309,13 +308,7 @@ class ACT_Task(Neurobit):
         else:
             self.NeurobitDx_V = 'Ortho'
             self.NeurobitDxDev_V = 0  
-        nb.ACT_Save._ACT_dx['ID'].append(self.ID)
-        nb.ACT_Save._ACT_dx['Date'].append(self.FolderName.split('_')[0])
-        nb.ACT_Save._ACT_dx['H_Dx'].append(self.NeurobitDx_H)
-        nb.ACT_Save._ACT_dx['H_Dev'].append(self.NeurobitDxDev_H)
-        nb.ACT_Save._ACT_dx['H_type'].append(self.NeurobitDxTp_X)
-        nb.ACT_Save._ACT_dx['V_Dx'].append(self.NeurobitDx_V)
-        nb.ACT_Save._ACT_dx['V_Dev'].append(self.NeurobitDxDev_V)
+    
     def GetTimeFromCmd(self):
         cmd = self.VoiceCommand
         O_t = np.where(cmd==0)[0]

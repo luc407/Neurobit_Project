@@ -27,19 +27,6 @@ pdfmetrics.registerFont(TTFont('Arial_bold', 'arialbd.ttf'))
 pdfmetrics.registerFont(TTFont('TSans', 'TaipeiSansTCBeta-Regular.ttf'))
 pdfmetrics.registerFont(TTFont('TSans_bold', 'TaipeiSansTCBeta-Bold.ttf'))
 
-TABLE_WIDTH = 7.2   # inch
-GAZE_TABLE_WIDTH = 3.6   # inch
-H_MARGIN = 0.5 * inch
-T_MARGIN = 30
-B_MARGIN = 18
-P_MARGIN = 10
-
-# color map
-line_color_palatte = {'greens':["#A5F5B3", "#51F46D",   "#00F62B", "#008D19", "#004D0D"], # pale / mid / base / dark / black              
-                      'oranges':["#FFD6AC", "#FFAC54", "#FF8300", "#B95F00", "#653400"],             
-                      'reds':["#FFB2AC", "#FF6154", "#FF1300", "#B90D00", "#650700"],                 
-                      'blues':["#A4DCEF", "#54C8EE", "#03B5F0", "#015773", "#012F3F"]}
-
 def main_head(headtext):
     Style=getSampleStyleSheet()
     bt = Style['Normal']    #字體的樣式
@@ -91,7 +78,7 @@ def subject_table(Subject):
         
         ('GRID', (0, 0), (-1, -1), 1, colors.grey),   # 設置表格框線爲grey色，線寬爲0.5
     ]    
-    colWidths = (TABLE_WIDTH / len(data[0])) * inch     # 每列的寬度
+    colWidths = (nb.TABLE_WIDTH / len(data[0])) * inch     # 每列的寬度
     component_table = Table(dis_list,colWidths = colWidths, style=style)    
     return component_table
 
@@ -127,7 +114,7 @@ def clinic_table(Subject):
         
         ('GRID', (0, 0), (-1, -1), 1, colors.grey),   # 設置表格框線爲grey色，線寬爲0.5
     ]    
-    colWidths = (TABLE_WIDTH / len(data[0])) * inch     # 每列的寬度
+    colWidths = (nb.TABLE_WIDTH / len(data[0])) * inch     # 每列的寬度
     component_table = Table(dis_list,colWidths = colWidths, style=style)    
     return component_table
 def diagnose_table(OLD_ACT_Task):
@@ -157,7 +144,7 @@ def diagnose_table(OLD_ACT_Task):
         ('BOX', (4, 2), (5, 3), 1.5, colors.black),   # 設置表格框線爲grey色，線寬爲1
         ('BOX', (4, 4), (5, 5), 1.5, colors.black),   # 設置表格框線爲grey色，線寬爲1
     ]    
-    colWidths = (GAZE_TABLE_WIDTH / len(data[0])) * inch     # 每列的寬度
+    colWidths = (nb.GAZE_TABLE_WIDTH / len(data[0])) * inch     # 每列的寬度
     component_table = Table(dis_list, 
                             colWidths=colWidths, 
                             rowHeights=colWidths/2,
@@ -247,8 +234,8 @@ def foot1(canvas, can):
 def CreatePDF(file_path):
     can = BaseDocTemplate(file_path, 
                           pagesize=A4,
-                          rightMargin=H_MARGIN,leftMargin=H_MARGIN,
-                          topMargin=T_MARGIN, bottomMargin=B_MARGIN)     
+                          rightMargin=nb.H_MARGIN,leftMargin=nb.H_MARGIN,
+                          topMargin=nb.T_MARGIN, bottomMargin=nb.B_MARGIN)     
     frameT = Frame(can.leftMargin, can.bottomMargin, can.width, can.height, id='normal')
     can.addPageTemplates([PageTemplate(id='OneCol', frames=frameT, onPage=foot1),])
     
@@ -284,7 +271,7 @@ def ACTReport(Element, ACT_Task):
         ('VALIGN', (0, 0), (1, -1), 'CENTER'),        # 對齊
         ('SPAN',(1,0),(1,-1))
         ]
-    tbl = Table(tbl_data,colWidths = TABLE_WIDTH *inch/2, style=style)
+    tbl = Table(tbl_data,colWidths = nb.TABLE_WIDTH *inch/2, style=style)
     Element.append(tbl)
     return Element
 
@@ -319,7 +306,7 @@ def CUTReport(Element, CUT_Task):
         ('VALIGN', (0, 0), (1, -1), 'CENTER'),        # 對齊
         ('SPAN',(1,0),(1,-1))
         ]
-    tbl = Table(tbl_data,colWidths = TABLE_WIDTH *inch/2, style=style)
+    tbl = Table(tbl_data,colWidths = nb.TABLE_WIDTH *inch/2, style=style)
     Element.append(tbl)
     return Element
 
@@ -391,4 +378,45 @@ def Gaze9Report(Element, Gaze9_Session):
     Element.append(gaze_table)
     #Element.append(tbl)
     return Element     
+    
+def VFReport(Element, VF_Task):
+    sub_head2 = sub_head("Pupil Eye Tracking")
+    im1 = Image(VF_Task.saveImage_path+"\\DrawPupil.png", width=nb.TABLE_WIDTH * inch *0.9, height=nb.TABLE_WIDTH *1/4 * inch*0.95)
+    im_figure = Image(VF_Task.saveImage_path+"\\DrawEyeTrack.png", width=nb.TABLE_WIDTH * inch *0.9, height=nb.TABLE_WIDTH *1/2 * inch*0.95) 
+    im_gridscale = Image(os.path.join(VF_Task.major_path, 'gridscale.png'), width=nb.TABLE_WIDTH * inch, height=nb.TABLE_WIDTH*88/1280*inch)
+    """Draw pupil table"""
+    data = [[         'Pupil Size' , 'OD', 'OS', 'Diff', 'MAE'],
+            ['Mean (mm)' , VF_Task.result['Mean']['Right'], VF_Task.result['Mean']['Left'], VF_Task.result['Mean']['Diff_label'], VF_Task.result['Mean']['Diff']],
+            ['Min (mm)'  , VF_Task.result['Min']['Right'],  VF_Task.result['Min']['Left'],  VF_Task.result['Min']['Diff_label'], VF_Task.result['Min']['Diff']],
+            ['Max (mm)'  , VF_Task.result['Max']['Right'],  VF_Task.result['Max']['Left'],  VF_Task.result['Max']['Diff_label'], VF_Task.result['Max']['Diff']],
+            ['Std (mm)'  , VF_Task.result['Std']['Right'],  VF_Task.result['Std']['Left'],  VF_Task.result['Std']['Diff_label'], VF_Task.result['Std']['Diff']],
+    ]
+    dis_list = []
+    for x in data:
+        dis_list.append(x)
+    style = [('GRID', (0, 0), (-1, -1), .6, colors.black),
+             ('TEXTCOLOR', (1, 0), (1, -1), nb.line_color_palatte['reds'][2]),
+             ('TEXTCOLOR', (2, 0), (2, -1), nb.line_color_palatte['blues'][2]),
+             ('FONTSIZE', (0, 0), (-1, -1), 10), # 字體大小
+             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+             ]
+    colWidths = (nb.TABLE_WIDTH/5) * inch *0.8   # 每列的寬度
+    rowHeights = (nb.TABLE_HEIGHT / 40) * inch    
+    component_table1 = Table(dis_list,  colWidths = colWidths, rowHeights=rowHeights, 
+            style=style)
+    
+    tbl_list = [[component_table1], [im1]]
+    style = [('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+             ]
+    colWidths = (nb.TABLE_WIDTH) * inch   # 每列的寬度
+    component_table2 = Table(tbl_list, ##colWidths = colWidths, rowHeights=rowHeights*5, 
+        style=style)
+    
+    Element.append(component_table2)
+    Element.append(sub_head2)
+    Element.append(im_gridscale)
+    Element.append(Spacer(1, inch * 0.10))
+    Element.append(im_figure)
 
+    return Element
