@@ -36,17 +36,13 @@ if __name__== '__main__':
     IsVF_Task      = False;
     IsCalibrated    = False;
     for csv_path in csv_files:
-# =============================================================================
-#         if not IsCalibrated:
-#             root = tk.Tk()
-#             my_gui = CalibSystem(root, csv_path)
-#             root.mainloop()
-#             IsCalibrated = True
-#             Neurobit.OD_WTW = my_gui.OD_WTW
-#             Neurobit.OS_WTW = my_gui.OS_WTW
-#             Neurobit.EYE_ORING = [[my_gui.xy[0][0],my_gui.xy[0][1]],
-#                          [my_gui.xy[3][0],my_gui.xy[3][1]]]
-# =============================================================================
+        if not IsCalibrated:            
+            my_gui = CalibSystem(csv_path)            
+            IsCalibrated = True
+            Neurobit.OD_WTW = my_gui.OD_WTW
+            Neurobit.OS_WTW = my_gui.OS_WTW
+            Neurobit.EYE_ORING = [[my_gui.xy[0][0],my_gui.xy[0][1]],
+                         [my_gui.xy[3][0],my_gui.xy[3][1]]]
         Subject.GetProfile(csv_path)
         #print(Subject.Task)            
         if "9 Gaze Motility Test (9Gaze)" in Subject.Task:
@@ -133,20 +129,20 @@ if __name__== '__main__':
     if IsACT_Task:
         Subject_Table   = subject_table(ACT_task)
         pdf_path    = os.path.join(ACT_task.saveReport_path,
-                                   ACT_task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
-                                   "_OcularMotility.pdf")
+                                   datetime.now().strftime("%Y%m%d")+"_"+datetime.now().strftime("%H%M%S")+"_"+
+                                   ACT_task.FolderName.split("_")[-1]+"_OcularMotility.pdf")
         pdf         = CreatePDF(pdf_path)
     elif IsCUT_Task:
         Subject_Table   = subject_table(CUT_task)
-        pdf_path    = os.path.join(CUT_task.saveReport_path, 
-                                   CUT_task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
-                                   "_OcularMotility.pdf")
+        pdf_path    = os.path.join(CUT_task.saveReport_path,
+                                   datetime.now().strftime("%Y%m%d")+"_"+datetime.now().strftime("%H%M%S")+"_"+
+                                   CUT_task.FolderName.split("_")[-1]+"_OcularMotility.pdf")
         pdf         = CreatePDF(pdf_path)    
     elif IsGaze9_Task:
         Subject_Table   = subject_table(Gaze9_task)
-        pdf_path    = os.path.join(Gaze9_task.saveReport_path, 
-                                   Gaze9_task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
-                                   "_OcularMotility.pdf")
+        pdf_path    = os.path.join(Gaze9_task.saveReport_path,
+                                   datetime.now().strftime("%Y%m%d")+"_"+datetime.now().strftime("%H%M%S")+"_"+
+                                   Gaze9_task.FolderName.split("_")[-1]+"_OcularMotility.pdf")
         pdf         = CreatePDF(pdf_path)
         
     if IsACT_Task or IsGaze9_Task or IsCUT_Task:
@@ -176,8 +172,8 @@ if __name__== '__main__':
     if IsVF_Task:
         Subject_Table   = subject_table(VF_task)
         pdf_path    = os.path.join(VF_task.saveReport_path,
-                                   VF_task.FolderName.replace("_","_"+datetime.now().strftime("%H%M%S")+"_")+
-                                   "_VideoFrenzel.pdf")
+                                   datetime.now().strftime("%Y%m%d")+"_"+datetime.now().strftime("%H%M%S")+"_"+
+                                   VF_task.FolderName.split("_")[-1]+"_VideoFrenzel.pdf")
         pdf         = CreatePDF(pdf_path)                
         Element = []
         Element.append(PDF_Header)
@@ -218,5 +214,18 @@ if __name__== '__main__':
     """', '""" + str(np.round(Gaze9_task.Diff_H[8],1)) + """', '""" + str(np.round(Gaze9_task.Diff_V[8],1)) + """')""")
     con.commit()
     
+    lastconnection = datetime.strptime(VF_task.Date, "%Y%m%d").strftime('%Y/%m/%d')
+    cur.execute("SELECT [Procedure_ID] FROM Visit WHERE [Datetime]='" + lastconnection + "' AND [Patient_ID]='" + VF_task.ID + "' AND [Examiner_ID]='" + VF_task.Doctor + "' AND [Procedure]='VideoFrenzel'")
+    procedure_ID = str(cur.fetchall()[-1][0]+1)
+    cur.execute("INSERT INTO Visit VALUES(null, '" + lastconnection + "', '" + VF_task.ID + "', '" + VF_task.Doctor + "', 'VideoFrenzel', '" + procedure_ID + "', null)")
+    cur.execute("SELECT [ID] FROM Visit WHERE [Datetime]='" + lastconnection + "' AND [Patient_ID]='" + VF_task.ID + "' AND [Examiner_ID]='" + VF_task.Doctor + "' AND [Procedure]='VideoFrenzel' AND [Procedure_ID]='" + procedure_ID + "'")
+    Visit_ID = str(cur.fetchall()[-1][0])
+    cur.execute("""INSERT INTO VideoFrenzel VALUES(null, '""" + Visit_ID + 
+    """', '""" + str(VF_task.result['Mean']['Right']) + """', '""" + str(VF_task.result['Min']['Right']) + """', '""" + str(VF_task.result['Min']['Right']) + """', '""" + str(VF_task.result['Std']['Right']) + 
+    """', '""" + str(VF_task.result['Mean']['Left']) + """', '""" + str(VF_task.result['Min']['Left']) + """', '""" + str(VF_task.result['Min']['Left']) + """', '""" + str(VF_task.result['Std']['Left']) + 
+    """', '""" + str(VF_task.result['Mean']['Diff_label']) + """', '""" + str(VF_task.result['Min']['Diff_label']) + """', '""" + str(VF_task.result['Min']['Diff_label']) + """', '""" + str(VF_task.result['Std']['Diff_label']) + 
+    """', '""" + str(VF_task.result['Mean']['Diff']) + """', '""" + str(VF_task.result['Min']['Diff']) + """', '""" + str(VF_task.result['Min']['Diff']) + """', '""" + str(VF_task.result['Std']['Diff']) + """')""")
+    con.commit()
+
     shutil.rmtree(Subject.save_path)
 

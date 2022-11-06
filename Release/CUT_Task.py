@@ -22,7 +22,7 @@ class CUT_Task(Neurobit):
         self.main_path = csv_path.replace("\\"+csv_path.split('\\')[-2],"").replace("\\"+csv_path.split('\\')[-1],"")
         self.DB_path = os.path.abspath(self.main_path+"\\../..")
         self.save_MainPath = self.save_path+"\\"+self.FolderName
-        self.saveReport_path = self.save_MainPath
+        self.saveReport_path = self.main_path+"\\"+self.FolderName
         self.saveMerge_path = self.save_MainPath+"\\"+self.task
         self.saveVideo_path = self.save_MainPath+"\\"+self.task+"\\HoughCircle"
         self.saveImage_path = self.save_MainPath+"\\"+self.task+"\\Image"              

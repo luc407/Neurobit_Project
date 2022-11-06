@@ -24,7 +24,7 @@ class VF_Task(Neurobit):
         self.FileName = csv_path.split('\\')[-1].replace(".csv","")
         self.main_path = csv_path.replace("\\"+csv_path.split('\\')[-2],"").replace("\\"+csv_path.split('\\')[-1],"")
         self.save_MainPath = self.save_path+"\\"+self.FolderName
-        self.saveReport_path = self.main_path
+        self.saveReport_path = self.main_path+"\\"+self.FolderName
         self.saveMerge_path = self.save_MainPath+"\\"+self.task
         self.saveVideo_path = self.save_MainPath+"\\"+self.task+"\\HoughCircle"
         self.saveImage_path = self.save_MainPath+"\\"+self.task+"\\Image"              

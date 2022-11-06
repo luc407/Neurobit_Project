@@ -31,11 +31,11 @@ def GetVideo(csv_path):
     return cv2.VideoCapture(fall)
             
 class CalibSystem:
-    def __init__(self, master, csv_path):
-        self.master = master
+    def __init__(self, csv_path):
+        self.master = tk.Tk()
         self.xy = []
-        master.title("Calibration")
-        master.geometry(geo_size)
+        self.master.title("Calibration")
+        self.master.geometry(geo_size)
         
         self.csv_path = csv_path
         self.cap = GetVideo(self.csv_path)
@@ -52,7 +52,7 @@ class CalibSystem:
         self.ax1.axis('off')
         self.ax1.text(20,460, "OD",fontsize=5)
         self.ax1.text(880,460, "OS",fontsize=5)
-        self.im1 = FigureCanvasTkAgg(self.fig, master)
+        self.im1 = FigureCanvasTkAgg(self.fig, self.master)
         self.im1.get_tk_widget().place(x=20, y=50)        
         self.scat = self.ax1.scatter([],[], s=10, c="b", marker='+',linewidth=.3)
         """Define Cursor"""
@@ -65,20 +65,22 @@ class CalibSystem:
         
                
         
-        self.startCalibrate_button = tk.Button(master, text='Start Calibrate!', command=self.startCalibrate)#.place(relx=0.45, rely=0.9)
+        self.startCalibrate_button = tk.Button(self.master, text='Start Calibrate!', command=self.startCalibrate)#.place(relx=0.45, rely=0.9)
         self.startCalibrate_button.pack(side=tk.LEFT, padx=258, pady=50, anchor=tk.S)
         
-        self.pre10Frame_button = tk.Button(master, text="<<", command=self.pre10Frame)#.place(relx=0.35, rely=0.9)
+        self.pre10Frame_button = tk.Button(self.master, text="<<", command=self.pre10Frame)#.place(relx=0.35, rely=0.9)
         self.pre10Frame_button.pack(side = tk.LEFT, anchor=tk.S, pady=50)
         
-        self.preFrame_button = tk.Button(master, text="<", command=self.preFrame)#.place(relx=0.4, rely=0.9)
+        self.preFrame_button = tk.Button(self.master, text="<", command=self.preFrame)#.place(relx=0.4, rely=0.9)
         self.preFrame_button.pack(side=tk.LEFT, anchor=tk.S, pady=50)        
         
-        self.nextFrame_button = tk.Button(master, text=">", command=self.nextFrame)#.place(relx=0.55, rely=0.9)
+        self.nextFrame_button = tk.Button(self.master, text=">", command=self.nextFrame)#.place(relx=0.55, rely=0.9)
         self.nextFrame_button.pack(side=tk.LEFT, anchor=tk.S, pady=50)
         
-        self.next10Frame_button = tk.Button(master, text=">>", command=self.next10Frame)#.place(relx=0.6, rely=0.9)
-        self.next10Frame_button.pack(side=tk.LEFT, anchor=tk.S, pady=50)       
+        self.next10Frame_button = tk.Button(self.master, text=">>", command=self.next10Frame)#.place(relx=0.6, rely=0.9)
+        self.next10Frame_button.pack(side=tk.LEFT, anchor=tk.S, pady=50)   
+        
+        self.master.mainloop()
     
     def __call__(self, event):
         if event.inaxes is not None:
@@ -119,7 +121,7 @@ class CalibSystem:
             elif len(self.xy) > 6: self.textvar.set_text("Too many point!."); self.fig.canvas.draw()
         else:
             print ('Clicked ouside axes bounds but inside plot window')
-            
+    
     def popBackXY(self):  
         if len(self.xy)>0:
             self.xy.pop()   
@@ -143,10 +145,11 @@ class CalibSystem:
             elif len(self.xy) == 6: self.textvar.set_text("Well done!."); self.fig.canvas.draw()
             elif len(self.xy) > 6: self.textvar.set_text("Too many point!."); self.fig.canvas.draw()
     
-    def done(self):
+    def done(self, event=None):
         self.OD_WTW = abs(self.xy[1][0]-self.xy[2][0])
         self.OS_WTW = abs(self.xy[4][0]-self.xy[5][0])
-        self.master.after(10, self.master.destroy)
+        self.master.quit()
+        self.master.destroy()
     
     def nextFrame(self):
         global pic
