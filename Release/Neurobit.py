@@ -353,16 +353,16 @@ class Neurobit():
             self.csv_path = os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".csv")
             self.FileName = self.csv_path.split('\\')[-1].replace(".csv","")
         else:        
-            time = 0; date = 0;
+            time = 0; date = 0; ind = 0;
             for i in range(0,len(self.session)):
-                ts = self.session[i].split("\\")[-1].split("_")[1]
-                ts = int(ts[:2])*3600+int(ts[2:4])*60+int(ts[4:5])
+                ts = int(self.session[i].split("\\")[-1].split("_")[1])
                 dt = int(self.session[i].split("\\")[-1].split("_")[0])
                 if dt > date:
-                    dt = date; ind = i
+                    date = dt; ind = i
                 elif ts>time:
                     time = ts; ind = i
-            self.csv_path = self.session[i]
+            self.csv_path = self.session[ind]
+            self.FileName = self.csv_path.split('\\')[-1].replace(".csv","")
     
     def GetCommand(self):    
         self.GetProfile(self.csv_path)
