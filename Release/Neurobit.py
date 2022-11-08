@@ -96,8 +96,8 @@ TABLE_HEIGHT =  (A4[1]-T_MARGIN-B_MARGIN)/inch  # inch
 global OD_WTW, OS_WTW, CAL_VAL_OD, CAL_VAL_OS, EYE_ORING
 OD_WTW = 0; 
 OS_WTW = 0;
-CAL_VAL_OD = 5/33;
-CAL_VAL_OS = 5/33;
+CAL_VAL_OD = 81862498/100000000;
+CAL_VAL_OS = 82780884/100000000;
 EYE_ORING = [[354,270],
              [998,253]]
 
@@ -352,8 +352,10 @@ class Neurobit():
             csv_1.to_csv(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".csv"))        
             self.csv_path = os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".csv")
             self.FileName = self.csv_path.split('\\')[-1].replace(".csv","")
-        else:
+        elif len(self.session)>1:
             self.csv_path = self.session[-1]
+        else:
+            self.csv_path = self.session[0]
     
     def GetCommand(self):    
         self.GetProfile(self.csv_path)
