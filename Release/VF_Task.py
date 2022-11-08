@@ -35,7 +35,6 @@ class VF_Task(Neurobit):
         if not os.path.isdir(self.saveImage_path):
             os.makedirs(self.saveImage_path)
     def Exec(self):
-        self.GetProfile(self.csv_path)
         self.GetEyePosition()
         self.FeatureExtraction()
         

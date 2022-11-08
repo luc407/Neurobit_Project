@@ -61,9 +61,12 @@ if __name__== '__main__':
                 CUT_task = CUT_Task(csv_path)  
                 CUT_task.session.append(csv_path)
         elif "Video Frenzel" in Subject.Task and Subject.Mode == "VideoFrenzel":
-            try: VF_task.session.append(csv_path)
+            try: 
+                VF_task.GetProfile(csv_path)
+                VF_task.session.append(csv_path)
             except:
                 VF_task = VF_Task(csv_path)  
+                VF_task.GetProfile(csv_path)
                 VF_task.session.append(csv_path)
         else:
             pass
