@@ -42,8 +42,8 @@ class VF_Task(Neurobit):
         self.DrawPupil()            
     
     def FeatureExtraction(self):
-        pupil_size_OD_All = self.OD[2,:]
-        pupil_size_OS_All = self.OS[2,:]
+        pupil_size_OD_All = self.OD[2,:]*nb.CAL_VAL_OD*2
+        pupil_size_OS_All = self.OS[2,:]*nb.CAL_VAL_OS*2
         self.result = {'Mean': {}, 'Min': {}, 'Max': {}, 'Std': {}}
 
         ## Find parameters
@@ -111,7 +111,7 @@ class VF_Task(Neurobit):
             OD_diff = np.nanmedian(OD[i,:])-OD[i,:]
             OS_diff = np.nanmedian(OS[i,:])-OS[i,:]
             OD_AG = nb.trans_AG(self.AL_OD,OD_diff,nb.CAL_VAL_OD)
-            OS_AG = nb.trans_AG(self.AL_OD,OS_diff,nb.CAL_VAL_OS)
+            OS_AG = nb.trans_AG(self.AL_OS,OS_diff,nb.CAL_VAL_OS)
             plt.subplot(2,1,i+1)
             ax = plt.gca()
              
@@ -148,8 +148,8 @@ class VF_Task(Neurobit):
         time = np.array(range(0,len(OD[0])))/30
         plt.rcParams["figure.figsize"] = (nb.TABLE_WIDTH*1.5, nb.TABLE_WIDTH *3/10)
         plt.rcParams["font.family"] = "Arial"           
-        plt.plot(time,OD[2,:]*nb.CAL_VAL_OD, nb.line_color_palatte['reds'][2], linewidth=0.5)
-        plt.plot(time,OS[2,:]*nb.CAL_VAL_OS, nb.line_color_palatte['blues'][2], linewidth=0.5)            
+        plt.plot(time,OD[2,:]*nb.CAL_VAL_OD*2, nb.line_color_palatte['reds'][2], linewidth=0.5)
+        plt.plot(time,OS[2,:]*nb.CAL_VAL_OS*2, nb.line_color_palatte['blues'][2], linewidth=0.5)            
         plt.xlim(0,30)
         plt.ylim(2,12)
         plt.title('Pupil Size Timeseries plot')
