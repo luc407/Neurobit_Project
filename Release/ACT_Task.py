@@ -339,7 +339,7 @@ class ACT_Task(Neurobit):
                 self.CmdTime[nb.ACT_TIME[i]] = temp
     def DrawEyeTrack(self):
         OD = self.OD; OS = self.OS
-        time = np.array(range(0,len(OD[0])))/25
+        time = np.array(range(0,len(OD[0])))/30
         fig = plt.gcf()
         fig.set_size_inches(7.2,2.5, forward=True)
         fig.set_dpi(300)              

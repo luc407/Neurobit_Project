@@ -48,10 +48,10 @@ class CalibSystem:
         self.ax1 = self.fig.add_axes([0, -0.15, 1, 1.2])
         self.ax1.imshow(im)
         self.ax1.set_xlim(0,width)
-        self.ax1.set_ylim(height+10,150)        
+        self.ax1.set_ylim(height-40,40)        
         self.ax1.axis('off')
-        self.ax1.text(20,460, "OD",fontsize=5)
-        self.ax1.text(880,460, "OS",fontsize=5)
+        self.ax1.text(int(width/4),height-60, "OD",fontsize=5)
+        self.ax1.text(int(width*3/4),height-60, "OS",fontsize=5)
         self.im1 = FigureCanvasTkAgg(self.fig, self.master)
         self.im1.get_tk_widget().place(x=20, y=50)        
         self.scat = self.ax1.scatter([],[], s=10, c="b", marker='+',linewidth=.3)
@@ -146,10 +146,13 @@ class CalibSystem:
             elif len(self.xy) > 6: self.textvar.set_text("Too many point!."); self.fig.canvas.draw()
     
     def done(self, event=None):
+        self.fig.clear()
         self.OD_WTW = abs(self.xy[1][0]-self.xy[2][0])
         self.OS_WTW = abs(self.xy[4][0]-self.xy[5][0])
         self.master.quit()
         self.master.destroy()
+        for item in self.im1.get_tk_widget().find_all():
+           self.im1.get_tk_widget().delete(item)
     
     def nextFrame(self):
         global pic
@@ -249,7 +252,7 @@ class CalibSystem:
         self.nextFrame_button.destroy()
         self.next10Frame_button.destroy()
         
-        self.textvar = self.ax1.text(500,140, 
+        self.textvar = self.ax1.text(int(1280/2),20, 
                                     "Select center of OD pupil.",
                                     fontsize=4, va='center', ha='center')
         self.fig.canvas.draw()

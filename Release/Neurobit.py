@@ -246,7 +246,7 @@ class Neurobit():
         
         if csv_path.split("_")[-1] == "OcularMotility.csv" and Mode == "OcularMotility":
             tmp = int(np.where(cmd_csv.PatientID == "Eye")[0]+1)
-            self.OcularMotility = "VideoFrenzel"
+            self.Mode = "OcularMotility"
             if self.task == 'ACT':
                 self.VoiceCommand = np.array(cmd_csv.PatientID[tmp:], dtype=float)
                 #print("GET VoiceCommand")
@@ -285,7 +285,7 @@ class Neurobit():
                            [int(OS_x-175),int(OS_y-125),350,250]]
         fourcc = cv2.VideoWriter_fourcc(*'MP42')
         out = cv2.VideoWriter(os.path.join(self.saveVideo_path,self.FileName+'.mp4'),
-                          fourcc, 25, (width,height))
+                          fourcc, 30, (width,height))
         #eyes, OD_pre, OS_pre = get_eye_position(GetVideo(self.csv_path),eyes_origin)
         OD = []; OS = []; thr_eyes = [] 
         frame_cnt = 0; OD_cal_cnt = 0; OS_cal_cnt = 0

@@ -7,11 +7,7 @@ Created on Sun Nov  6 10:23:22 2022
 
 import os
 import cv2
-import time as ts
 import numpy as np
-from reportlab.lib.units import inch
-from reportlab.platypus import BaseDocTemplate, Image, Paragraph, Table, TableStyle, PageBreak, \
-    Frame, PageTemplate, NextPageTemplate,Spacer 
 import Neurobit as nb
 from Neurobit import Neurobit
 from scipy import stats
@@ -146,8 +142,8 @@ class VF_Task(Neurobit):
             plt.yticks()
         plt.tight_layout()
         plt.savefig(os.path.join(self.saveImage_path,"DrawEyeTrack.png"), dpi=300, bbox_inches = 'tight')
+        plt.close()
         print("DrawEyeTrack")
-        plt.clf()
     def DrawPupil(self):
         OD = self.OD; OS = self.OS
         time = np.array(range(0,len(OD[0])))/30
@@ -162,8 +158,8 @@ class VF_Task(Neurobit):
         plt.xlabel('Time (s)')
         plt.legend(['OD', 'OS'], fontsize=8)
         plt.savefig(os.path.join(self.saveImage_path,"DrawPupil.png"), dpi=300, bbox_inches = 'tight')
+        plt.close()
         print("DrawPupil")
-        plt.clf()
     def DrawTextVideo(self, frame, frame_cnt):
         width = frame.shape[1]
         
