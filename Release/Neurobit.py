@@ -339,34 +339,17 @@ class Neurobit():
         self.Preprocessing()
     
     def MergeFile(self):
-        if len(self.session)>1 and self.Mode == "OcularMotility":
-            csv_1 = pd.read_csv(self.session[0], dtype=object)
-            videoList = []
-            videoList.append(VideoFileClip(self.session[0].replace(".csv",".mp4")))
-            for i in range(1,len(self.session)):                
-                csv_2 = pd.read_csv(self.session[i], dtype=object)
-                tmp = int(np.where(csv_2.PatientID == "Eye")[0]+1)
-                csv_1 = csv_1.append(csv_2[tmp:], ignore_index=True)
-                video = VideoFileClip(self.session[i].replace(".csv",".mp4"))
-                videoList.append(video)
-                              
-            final_video = concatenate_videoclips(videoList)
-            final_video.write_videofile(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".mp4"))  
-            csv_1.to_csv(os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".csv"))        
-            self.csv_path = os.path.join(self.saveMerge_path,self.FolderName + "_" + self.task + ".csv")
-            self.FileName = self.csv_path.split('\\')[-1].replace(".csv","")
-        else:        
-            time = 0; date = 0; ind = 0;
-            for i in range(0,len(self.session)):
-                ts = self.session[i].split("\\")[-1].split("_")[1]
-                ts = int(ts[:2])*3600+int(ts[2:4])*60+int(ts[4:5])
-                dt = int(self.session[i].split("\\")[-1].split("_")[0])
-                if dt > date:
-                    date = dt; ind = i
-                elif ts>time:
-                    time = ts; ind = i
-            self.csv_path = self.session[ind]
-            self.FileName = self.csv_path.split('\\')[-1].replace(".csv","")
+        time = 0; date = 0; ind = 0;
+        for i in range(0,len(self.session)):
+            ts = self.session[i].split("\\")[-1].split("_")[1]
+            ts = int(ts[:2])*3600+int(ts[2:4])*60+int(ts[4:5])
+            dt = int(self.session[i].split("\\")[-1].split("_")[0])
+            if dt > date:
+                date = dt; ind = i
+            elif ts>time:
+                time = ts; ind = i
+        self.csv_path = self.session[ind]
+        self.FileName = self.csv_path.split('\\')[-1].replace(".csv","")
     
     def GetCommand(self):    
         self.GetProfile(self.csv_path)

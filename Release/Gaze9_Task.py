@@ -23,6 +23,7 @@ class Gaze9_Task(Neurobit):
     def __init__(self, csv_path):
         nb.Neurobit.__init__(self)
         self.task = "9_Gaze"
+        self.Mode = "OcularMotility"
         self.FolderName = csv_path.split('\\')[-2]
         self.FileName = csv_path.split('\\')[-1].replace(".csv","")
         self.main_path = csv_path.replace("\\"+csv_path.split('\\')[-2],"").replace("\\"+csv_path.split('\\')[-1],"")

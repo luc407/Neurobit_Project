@@ -19,6 +19,7 @@ class VF_Task(Neurobit):
     def __init__(self, csv_path):
         Neurobit.__init__(self)
         self.task = "VF"
+        self.Mode = "VideoFrenzel"
         self.sequence = 0
         self.FolderName = csv_path.split('\\')[-2]
         self.FileName = csv_path.split('\\')[-1].replace(".csv","")
