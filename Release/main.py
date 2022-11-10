@@ -44,7 +44,7 @@ if __name__== '__main__':
             Neurobit.EYE_ORING = [[my_gui.xy[0][0],my_gui.xy[0][1]],
                          [my_gui.xy[3][0],my_gui.xy[3][1]]]
         Subject.GetProfile(csv_path)
-        #print(Subject.Task)            
+        #print(Subject.Task)
         if "9 Gaze Motility Test (9Gaze)" in Subject.Task and Subject.Mode == "OcularMotility":
             try: Gaze9_task.session.append(csv_path)
             except:
@@ -125,7 +125,7 @@ if __name__== '__main__':
         VF_task.MergeFile()
         VF_task.Exec()
     else:
-        VF_task = VF_task(csv_path)  
+        VF_task = VF_Task(csv_path)  
 
     """Plot OcularMotility Report"""    
     PDF_Header = sub_head("NeuroSpeed")

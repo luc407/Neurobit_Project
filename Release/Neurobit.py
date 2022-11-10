@@ -190,6 +190,7 @@ class Neurobit():
         self.AL_OD = 25.15
         self.AL_OS = 25.15
         self.FolderName = []
+        self.Mode = []
     
     def GetFolderPath(self):
         ID, profile, _, _ = self.GetDxSql()
@@ -243,8 +244,8 @@ class Neurobit():
         self.Device = cmd_csv.Device[0]
         self.Doctor = visit_ID[3]
         self.Date   = visit_ID[1].replace("/","")[:8]
-        
-        if csv_path.split("_")[-1] == "OcularMotility.csv" and Mode == "OcularMotility":
+
+        if csv_path.split("_")[-1] == "OcularMotility.csv" and Mode == "OcularMotility" and self.Task != "Capture":
             tmp = int(np.where(cmd_csv.PatientID == "Eye")[0]+1)
             self.Mode = "OcularMotility"
             if self.task == 'ACT':
@@ -260,7 +261,9 @@ class Neurobit():
                 pass#print("Go to make "+self.task+" function!!!")
         elif Mode == "VideoFrenzel":
             self.Mode = "VideoFrenzel"
-            
+        else:
+            self.Mode = Mode
+        
         self.Name   = str(profile[2]+","+profile[4])
         self.Gender = str(profile[6])
         self.DoB    = str(profile[7])
@@ -355,7 +358,8 @@ class Neurobit():
         else:        
             time = 0; date = 0; ind = 0;
             for i in range(0,len(self.session)):
-                ts = int(self.session[i].split("\\")[-1].split("_")[1])
+                ts = self.session[i].split("\\")[-1].split("_")[1]
+                ts = int(ts[:2])*3600+int(ts[2:4])*60+int(ts[4:5])
                 dt = int(self.session[i].split("\\")[-1].split("_")[0])
                 if dt > date:
                     date = dt; ind = i

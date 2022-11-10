@@ -106,7 +106,7 @@ class ACT_Task(Neurobit):
         self.OS_fix = OS_fix        
     def VoiceCommandFeatureExtraction(self):
         def GetTrialCmd(i,eyePosition,ACT_Trial,act_time,CmdTime):
-            duration = int(3*24) # respond period = seconds*fps            
+            duration = int(3*30) # respond period = seconds*fps            
             LT = 5  # Set default latency
             CmdTmp = CmdTime[act_time];print(act_time, i)
             Trial_trg_ind = np.where(np.diff(CmdTime[act_time]) > 5)[0]

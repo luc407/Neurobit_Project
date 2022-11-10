@@ -20,6 +20,9 @@ install('Pillow')
 install('cmake')
 install('boost')
 install('tqdm')
+install('matplotlib')
+install('pandas')
+install('scipy')
 
 import os
 import glob

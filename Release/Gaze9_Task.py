@@ -89,7 +89,7 @@ class Gaze9_Task(Neurobit):
             exec('self.CmdTime[nb.GAZE_9_TIME[i]] = '+nb.GAZE_9_TIME[i]+'[cov_non]')
     def FeatureExtraction(self,*args):
         def GetTrialCmd(i,eyePosition,Gaze9,T,CmdTime,AdjCmdTime):
-            window = int(3*24) # respond period = seconds*fps 
+            window = int(3*30) # respond period = seconds*fps 
             LT = 10  # Set default latency
             CmdTmp = CmdTime[T];print(T,i)            
             
@@ -99,9 +99,9 @@ class Gaze9_Task(Neurobit):
             if end_ind.any(): end_ind = end_ind[0]
             else: end_ind = len(CmdTmp)-1            
             
-            t = CmdTmp[start_ind]-window-1;            
-            baseline_x = np.nanmean(eyePosition[0,CmdTmp[start_ind]-window:CmdTmp[start_ind]-window+LT]) # mean value in latency
-            baseline_y = np.nanmean(eyePosition[1,CmdTmp[start_ind]-window:CmdTmp[start_ind]-window+LT]) # mean value in latency
+            t = CmdTmp[start_ind]-1;            
+            baseline_x = np.nanmean(eyePosition[0,CmdTmp[start_ind]:CmdTmp[start_ind]+LT]) # mean value in latency
+            baseline_y = np.nanmean(eyePosition[1,CmdTmp[start_ind]:CmdTmp[start_ind]+LT]) # mean value in latency
             
             tmp_t = []; 
             if T == 'F':                
@@ -115,7 +115,7 @@ class Gaze9_Task(Neurobit):
                     AdjCmdTime[T] = CmdTmp[end_ind]
             elif T == 'U':
                 pre_x = baseline_x; pre_y = baseline_y;
-                for x,y,p in eyePosition[:,CmdTmp[start_ind]-window:CmdTmp[end_ind]+window].transpose():
+                for x,y,p in eyePosition[:,CmdTmp[start_ind]:CmdTmp[end_ind]+window].transpose():
                     t+=1
                     if y < pre_y:
                         fin_x = x; fin_y = y; fin_p = p;
@@ -123,7 +123,7 @@ class Gaze9_Task(Neurobit):
                         tmp_t = t
             elif T == 'D':
                 pre_x = baseline_x; pre_y = baseline_y;
-                for x,y,p in eyePosition[:,CmdTmp[start_ind]-window:CmdTmp[end_ind]+window].transpose():
+                for x,y,p in eyePosition[:,CmdTmp[start_ind]:CmdTmp[end_ind]+window].transpose():
                     t+=1
                     if y > pre_y:
                         fin_x = x; fin_y = y; fin_p = p;
@@ -131,7 +131,7 @@ class Gaze9_Task(Neurobit):
                         tmp_t = t
             elif T == 'R':
                 pre_x = baseline_x; pre_y = baseline_y;
-                for x,y,p in eyePosition[:,CmdTmp[start_ind]-window:CmdTmp[end_ind]+window].transpose():
+                for x,y,p in eyePosition[:,CmdTmp[start_ind]:CmdTmp[end_ind]+window].transpose():
                     t+=1
                     if x < pre_x:
                         fin_x = x; fin_y = y; fin_p = p;
@@ -139,7 +139,7 @@ class Gaze9_Task(Neurobit):
                         tmp_t = t
             elif T == 'L':
                 pre_x = baseline_x; pre_y = baseline_y;
-                for x,y,p in eyePosition[:,CmdTmp[start_ind]-window:CmdTmp[end_ind]+window].transpose():
+                for x,y,p in eyePosition[:,CmdTmp[start_ind]:CmdTmp[end_ind]+window].transpose():
                     t+=1
                     if x > pre_x:
                         fin_x = x; fin_y = y; fin_p = p;
@@ -147,15 +147,15 @@ class Gaze9_Task(Neurobit):
                         tmp_t = t
             elif T == 'RU':
                 pre_x = baseline_x; pre_y = baseline_y;
-                for x,y,p in eyePosition[:,CmdTmp[start_ind]-window:CmdTmp[end_ind]+window].transpose():
+                for x,y,p in eyePosition[:,CmdTmp[start_ind]:CmdTmp[end_ind]+window].transpose():
                     t+=1
-                    if x < pre_x or y < pre_y:
+                    if x < pre_x:
                         fin_x = x; fin_y = y; fin_p = p;
                         pre_x = x; pre_y = y;
                         tmp_t = t
             elif T == 'LU':
                 pre_x = baseline_x; pre_y = baseline_y;
-                for x,y,p in eyePosition[:,CmdTmp[start_ind]-window:CmdTmp[end_ind]+window].transpose():
+                for x,y,p in eyePosition[:,CmdTmp[start_ind]:CmdTmp[end_ind]+window].transpose():
                     t+=1
                     if x > pre_x or y < pre_y:
                         fin_x = x; fin_y = y; fin_p = p;
@@ -163,15 +163,15 @@ class Gaze9_Task(Neurobit):
                         tmp_t = t
             elif T == 'RD':
                 pre_x = baseline_x; pre_y = baseline_y;
-                for x,y,p in eyePosition[:,CmdTmp[start_ind]-window:CmdTmp[end_ind]+window].transpose():
+                for x,y,p in eyePosition[:,CmdTmp[start_ind]:CmdTmp[end_ind]+window].transpose():
                     t+=1
-                    if x < pre_x or y > pre_y:
+                    if x < pre_x:
                         fin_x = x; fin_y = y; fin_p = p;
                         pre_x = x; pre_y = y;
                         tmp_t = t
             elif T == 'LD':
                 pre_x = baseline_x; pre_y = baseline_y;
-                for x,y,p in eyePosition[:,CmdTmp[start_ind]-window:CmdTmp[end_ind]+window].transpose():
+                for x,y,p in eyePosition[:,CmdTmp[start_ind]:CmdTmp[end_ind]+window].transpose():
                     t+=1
                     if x > pre_x or y > pre_y:
                         fin_x = x; fin_y = y; fin_p = p;
@@ -248,7 +248,7 @@ class Gaze9_Task(Neurobit):
                 diff_OS_x = ACT_task.OS_ACT[2][0]-self.Gaze_9_OS[i][0]
                 diff_OS_y = ACT_task.OS_ACT[2][1]-self.Gaze_9_OS[i][1]
             else:
-                F_t = [i for i in range(0,len(nb.GAZE_9_TIME)) if nb.GAZE_9_TIME[i] == "F"]
+                F_t = [i for i in range(0,len(nb.GAZE_9_TIME)) if nb.GAZE_9_TIME[i] == "F"][0]
                 diff_OD_x = self.Gaze_9_OD[F_t][0]-self.Gaze_9_OD[i][0]
                 diff_OD_y = self.Gaze_9_OD[F_t][1]-self.Gaze_9_OD[i][1]
                 diff_OS_x = self.Gaze_9_OS[F_t][0]-self.Gaze_9_OS[i][0]
