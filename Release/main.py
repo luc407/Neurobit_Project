@@ -34,7 +34,7 @@ if __name__== '__main__':
     IsGaze9_Task    = False; 
     IsCUT_Task      = False;
     IsVF_Task      = False;
-    IsCalibrated    = True;
+    IsCalibrated    = False;
     for csv_path in csv_files:
         if not IsCalibrated:            
             my_gui = CalibSystem(csv_path)            
@@ -128,7 +128,7 @@ if __name__== '__main__':
         VF_task = VF_Task(csv_path)  
 
     """Plot OcularMotility Report"""    
-    PDF_Header = sub_head("NeuroSpeed")
+    PDF_Header = sub_head("NeuroSwift")
     if IsACT_Task:
         Subject_Table   = subject_table(ACT_task)
         pdf_path    = os.path.join(ACT_task.saveReport_path,
@@ -201,7 +201,7 @@ if __name__== '__main__':
         con.commit()
     
     """Plot VideoFrenzel Report"""  
-    PDF_Header = sub_head("NeuroSpeed")
+    PDF_Header = sub_head("NeuroSwift")
     if IsVF_Task:
         Subject_Table   = subject_table(VF_task)
         pdf_path    = os.path.join(VF_task.saveReport_path,

@@ -146,7 +146,8 @@ class CalibSystem:
             elif len(self.xy) > 6: self.textvar.set_text("Too many point!."); self.fig.canvas.draw()
     
     def done(self, event=None):
-        self.fig.clear()
+        plt.clf() 
+        plt.close(self.fig) 
         self.OD_WTW = abs(self.xy[1][0]-self.xy[2][0])
         self.OS_WTW = abs(self.xy[4][0]-self.xy[5][0])
         self.master.quit()
