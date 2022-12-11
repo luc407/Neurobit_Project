@@ -9,18 +9,22 @@ import os
 import cv2
 import time
 import numpy as np
-import tkinter as tk
+# =============================================================================
+# import tkinter as tk
+# =============================================================================
+import ttkbootstrap as tk
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from matplotlib.widgets import Cursor
 from PIL import Image, ImageTk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from win32api import GetSystemMetrics
 
 """Initial Setting"""
 my_dpi = 600
 home: int = 0
 visitor: int = 0
-geo_size = '1320x640'
+
 pic = 60
 csv_path="D:\\Neurobit_Project\\Release\\Result\\A12345678\\20220308_A12345678\\20220308_162040_A12345678_OcularMotility.csv"
 
@@ -32,20 +36,24 @@ def GetVideo(csv_path):
             
 class CalibSystem:
     def __init__(self, csv_path):
-        self.master = tk.Tk()
+        self.master = tk.Window(themename='litera')
         self.xy = []
-        self.master.title("Calibration")
-        self.master.geometry(geo_size)
+        self.master.title("Calibration")        
         
         self.csv_path = csv_path
         self.cap = GetVideo(self.csv_path)
         self.cap.set(1,pic)
         ret, im = self.cap.read()
-        height = im.shape[0]
-        width = im.shape[1]
+        height = im.shape[0]*(GetSystemMetrics(0)/im.shape[1])
+        width = GetSystemMetrics(0)
+        geo_size = str(int(width/2))+'x'+str(int(height*2/3))
+        self.master.geometry(geo_size)
         
         self.fig = plt.figure(figsize=(width/my_dpi, height/my_dpi), dpi=my_dpi,frameon=False)
-        self.ax1 = self.fig.add_axes([0, -0.15, 1, 1.2])
+# =============================================================================
+#         self.ax1 = self.fig.add_axes([0, -0.15, 1, 1.2])
+# =============================================================================
+        self.ax1 = self.fig.add_axes([0, 0, 1, 1])
         self.ax1.imshow(im)
         self.ax1.set_xlim(0,width)
         self.ax1.set_ylim(height-40,40)        
