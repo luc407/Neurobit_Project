@@ -132,7 +132,7 @@ class VF_Task(Neurobit):
             plt.ylabel('Position (°)')
             plt.xlabel('Time (s)')
             plt.legend(['OD', 'OS'])
-            plt.xlim(0,30)
+            #plt.xlim(0,30)
             if i == 0:
                 plt.title('Horizontal')
             elif i == 1:
