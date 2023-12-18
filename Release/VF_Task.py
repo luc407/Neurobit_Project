@@ -137,7 +137,7 @@ class VF_Task(Neurobit):
                 plt.title('Horizontal')
             elif i == 1:
                 plt.title('Vertical')
-            plt.ylim(-30,30)
+            plt.ylim(np.nanmin(OD_AG)-5,np.nanmax(OD_AG)+5)
             plt.xticks(np.arange(0, 31, 5))
             plt.yticks()
         plt.tight_layout()
