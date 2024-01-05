@@ -48,7 +48,7 @@ class Gaze9_Task(Neurobit):
         
         self.GetEyePosition()
         if not self.NoEyes:
-        self.Preprocessing()
+            self.Preprocessing()
             #self.SeperateSession()                
             if Finished_ACT: self.FeatureExtraction(ACT_Task) 
             else: self.FeatureExtraction() 

@@ -274,7 +274,7 @@ def CreatePDF(file_path):
     return can
 def ACTReport(Element, ACT_Task):
     sub_head2 = sub_head("ACT Dynamic Eyeposition Tracking")
-    sub_head3 = sub_head("Ocular Alignment -- Alternated Cover Test Sequence in Primary Position")
+    sub_head3 = sub_head("Ocular Alignment -- Alternate Cover Test Sequence in Primary Position")
     #text1 = con_text("Alternated Cover Test Sequence in Primary Position")
     Quality_Bar = quality_bar(ACT_Task.OD, ACT_Task.OS, ACT_Task)
     gaze_table = diagnose_table(ACT_Task)
@@ -466,7 +466,11 @@ def VFReport(Element, VF_Task):
 
     Element.append(sub_head1)
     Element.append(component_table2)
+    
+    # TFDA Class I version
     #Element.append(sub_head2_1)
+    
+    # FDA/CE Class I version
     Element.append(sub_head2)
     Element.append(im_gridscale)
     Element.append(Spacer(1, inch * 0.10))

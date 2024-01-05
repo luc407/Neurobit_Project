@@ -37,7 +37,7 @@ class ACT_Task(Neurobit):
         
         self.GetEyePosition()
         if not self.NoEyes:
-        self.Preprocessing()
+            self.Preprocessing()
         #self.SeperateSession()              
             self.FeatureExtraction()  
             self.GetDiagnosis()  
@@ -339,28 +339,36 @@ class ACT_Task(Neurobit):
                 self.CmdTime[nb.ACT_TIME[i]] = temp
     def DrawEyeTrack(self):
         OD = self.OD; OS = self.OS
-        time = np.array(range(0,len(OD[0])))/30
+        FPS = 24
+        y_min = -100
+        y_max = 100
+        time = np.array(range(0,len(OD[0])))/FPS
+        time_CL = np.round(self.CmdTime['CL_t']/FPS,2)
+        time_CR = np.round(self.CmdTime['CR_t']/FPS,2)
         fig = plt.gcf()
         fig.set_size_inches(7.2,2.5, forward=True)
         fig.set_dpi(300)              
         for i in range(0,len(nb.EYE)):
+            plt.subplot(1,2,i+1)
             if nb.EYE[i] == 'OD':
+                plt.vlines(time_CR,y_min,y_max, colors='lightgray', alpha=0.2, linewidth=1)
                 x_diff = self.OD_ACT[0,0]-OD[0,:]
                 y_diff = self.OD_ACT[0,1]-OD[1,:]
                 x_PD = nb.trans_PD(self.AL_OD,x_diff,nb.CAL_VAL_OD)
                 y_PD = nb.trans_PD(self.AL_OD,y_diff,nb.CAL_VAL_OD)
             else:
+                plt.vlines(time_CL,y_min,y_max, colors='lightgray', alpha=0.2, linewidth=1)
                 x_diff = self.OS_ACT[0,0]-OS[0,:]
                 y_diff = self.OS_ACT[0,1]-OS[1,:]
                 x_PD = nb.trans_PD(self.AL_OS,x_diff,nb.CAL_VAL_OS)
                 y_PD = nb.trans_PD(self.AL_OS,y_diff,nb.CAL_VAL_OS)
-            plt.subplot(1,2,i+1)
+            
             plt.plot(time,x_PD, linewidth=1, color = 'b',label = 'X axis')
             plt.plot(time,y_PD, linewidth=1, color = 'r',label = 'Y axis')
             
             plt.xlabel("Time (s)")
             plt.ylabel("Eye Position (PD)")
-            plt.title("Alternated Cover Test "+ nb.EYE[i])
+            plt.title("Alternate Cover Test "+ nb.EYE[i])
             
             plt.grid(True, linestyle=':')
             plt.xticks(fontsize= 8)
@@ -378,7 +386,7 @@ class ACT_Task(Neurobit):
             plt.text(time[-1], -90,"down",color='salmon',
                      horizontalalignment='right',
                      verticalalignment='center', fontsize=8) 
-            plt.ylim([-100,100])
+            plt.ylim([y_min,y_max])
         plt.tight_layout()
         plt.savefig(os.path.join(self.saveImage_path,"DrawEyeTrack.png"), dpi=300) 
     def DrawEyeFig(self):
