@@ -23,7 +23,6 @@ install('tqdm')
 install('matplotlib')
 install('pandas')
 install('scipy')
-install('ttkbootstrap')
 
 import os
 import glob

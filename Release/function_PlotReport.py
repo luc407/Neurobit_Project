@@ -10,6 +10,7 @@ import os
 import numpy as np
 import Neurobit as nb
 from PIL import Image as pImage
+from datetime import datetime
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -55,15 +56,32 @@ def con_text(headtext):
     bt.spaceBefore= 10
     bt.spaceAfter= 10
     return Paragraph(headtext,bt)
+
+def tablenote_text(headtext):
+    Style=getSampleStyleSheet()
+    bt = Style['Normal']    #字體的樣式
+    bt.fontName='Helvetica-Bold'     #使用的字體
+    bt.fontSize=6         #字號
+    bt.wordWrap = 'Normal'     #該屬性支持自動換行，'CJK'是中文模式換行，用於英文中會截斷單詞造成閱讀困難，可改爲'Normal'
+    bt.spaceBefore= 2
+    bt.spaceAfter= 2
+    bt.textColor = colors.gray
+    return Paragraph(headtext,bt)
     
 def subject_table(Subject):
+    
+    # change Exam Date format yyyymmdd to yyyy/mm/dd
+    date_time_obj = datetime.strptime(Subject.Date, '%Y%m%d')
+    ExamDate_new_format = date_time_obj.strftime('%Y/%m/%d')
+
     if Subject.ID:
-        data = [['Patient ID: ' + Subject.ID,       'Date of Birth: ' + Subject.DoB,    'Exam Date: ' + Subject.Date,   'Examiner ID: ' + Subject.Doctor],
-                ['Patient Name: ' + Subject.Name,   'Sex: ' + Subject.Gender,        'Age: ' + Subject.Age,          'Height: ' + str(Subject.Height)]
+        data = [['Patient ID: ' + Subject.ID, 'Date of Birth: ' + Subject.DoB, 'Exam Date: ' + ExamDate_new_format,             'Name: ' + Subject.Name],
+                ['Sex: ' + Subject.Gender,    'Age: ' + Subject.Age + ' y/o',  'Height: ' + str(Subject.Height) + ' cm', 'Examiner ID: ' + Subject.Doctor],
+                ['Impression:']
         ]   
     else:
-        data = [['Patient ID: ' + Subject.ID,       'Date of Birth: ' + str(Subject.Profile_ind),    'Exam Date: ' + Subject.Date,   'Doctor: ' + Subject.Doctor],
-                ['Patient Name: ' + str(Subject.Profile_ind),   'Gender: ' + str(Subject.Profile_ind),        'Age: ' + str(Subject.Profile_ind),          'Height: ' + str(Subject.Profile_ind)]
+        data = [['Patient ID: ' + Subject.ID,        'Date of Birth: ' + str(Subject.Profile_ind), 'Exam Date: ' + ExamDate_new_format,          'Name: ' + str(Subject.Profile_ind)],
+                ['Sex: ' + str(Subject.Profile_ind), 'Age: ' + str(Subject.Profile_ind),           'Height: ' + str(Subject.Profile_ind), 'Examiner ID: ' + Subject.Doctor]
         ]
     dis_list = []
     for x in data:
@@ -76,6 +94,7 @@ def subject_table(Subject):
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),        # 對齊
         ('VALIGN', (-1, 0), (-2, 0), 'MIDDLE'),     # 對齊
         
+        ('SPAN',(0, 2), (3, 2)), # 合併第三行表格
         ('GRID', (0, 0), (-1, -1), 1, colors.grey),   # 設置表格框線爲grey色，線寬爲0.5
     ]    
     colWidths = (nb.TABLE_WIDTH / len(data[0])) * inch     # 每列的寬度
@@ -219,16 +238,28 @@ def foot1(canvas, can):
     canvas.setFillColorRGB(.5,.5,.5)
     canvas.drawString((can.width+len(page)*7) / 2, 0.5 * inch, page)
     canvas.restoreState()
-    note = "Copyright © 2022 Neurobit Technologies Co., Ltd. All rights reserved."
+    note = "Copyright © 2023 Neurobit Technologies Co., Ltd. All rights reserved."
     canvas.saveState()
     canvas.setFillColorRGB(.5,.5,.5)
     canvas.setFont("Helvetica",6) #choose your font type and font size
     canvas.drawString((can.width*0.75), (can.height*0.05), note)
+    
+    # Neurobit logo
     logo_path = os.path.join(os.getcwd().replace("\\Result",""), 'logo.png')
     logo = pImage.open(logo_path)
     logo_width, logo_height = logo.size
     n_height = logo_height * 80 / logo_width
     canvas.drawImage(logo_path, 0, int(A4[1]-n_height), width=80, height=n_height)
+    
+    # Medical/clinic logo
+    logo_medical_path = os.path.join(os.getcwd().replace("\\Result",""), 'logo_medical.png')
+    if os.path.exists(logo_medical_path):
+        logo_medical = pImage.open(logo_medical_path)
+        logo_medical_width, logo_medical_height = logo_medical.size
+        logo_medical_width = logo_medical_width *0.5
+        logo_medical_height = logo_medical_height *0.5
+        canvas.drawImage(logo_medical_path, int(A4[0]-logo_medical_width-10), int(A4[1]-logo_medical_height), width=logo_medical_width, height=logo_medical_height)
+    
     canvas.restoreState()
     logo.close()
 def CreatePDF(file_path):
@@ -311,9 +342,7 @@ def CUTReport(Element, CUT_Task):
     return Element
 
 def Gaze9Report(Element, Gaze9_Session):
-    GAZE_9_STR      = ["D",       "F",    "L",     
-                   "LD",  "LU",  "R",  
-                   "RD", "RU", "U"]
+    GAZE_9_STR = nb.GAZE_9_TIME
     sub_head2 = sub_head("9 Gaze Dynamic Eyeposition Tracking")
     sub_head3 = sub_head("Ocular Motility -- 9 Gaze Test Sequence")
     #text1 = con_text("9 Gaze Test Sequence")
@@ -380,10 +409,12 @@ def Gaze9Report(Element, Gaze9_Session):
     return Element     
     
 def VFReport(Element, VF_Task):
+    sub_head1 = sub_head("Pupillography and Pupillometry")
     sub_head2 = sub_head("Pupil Eye Tracking")
+    sub_head2_1 = sub_head("Note")
     im1 = Image(VF_Task.saveImage_path+"\\DrawPupil.png", width=nb.TABLE_WIDTH * inch *0.9, height=nb.TABLE_WIDTH *1/4 * inch*0.95)
-    im_figure = Image(VF_Task.saveImage_path+"\\DrawEyeTrack.png", width=nb.TABLE_WIDTH * inch *0.9, height=nb.TABLE_WIDTH *1/2 * inch*0.95) 
-    im_gridscale = Image(os.path.join(VF_Task.major_path, 'gridscale.png'), width=nb.TABLE_WIDTH * inch, height=nb.TABLE_WIDTH*88/1280*inch)
+    im_figure = Image(VF_Task.saveImage_path+"\\DrawEyeTrack.png", width=nb.TABLE_WIDTH * inch *0.9, height=nb.TABLE_WIDTH *1/2.5 * inch*0.9) 
+    im_gridscale = Image(os.path.join(VF_Task.major_path, 'gridscale.png'), width=2/3*nb.TABLE_WIDTH * inch, height=2/3*nb.TABLE_WIDTH*88/1280*inch)
     """Draw pupil table"""
     data = [[         'Pupil Size' , 'OD', 'OS', 'Diff', 'MAE'],
             ['Mean (mm)' , VF_Task.result['Mean']['Right'], VF_Task.result['Mean']['Left'], VF_Task.result['Mean']['Diff_label'], VF_Task.result['Mean']['Diff']],
@@ -400,7 +431,7 @@ def VFReport(Element, VF_Task):
              ('FONTSIZE', (0, 0), (-1, -1), 10), # 字體大小
              ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
              ]
-    colWidths = (nb.TABLE_WIDTH/5) * inch *0.8   # 每列的寬度
+    colWidths = (nb.TABLE_WIDTH / 5) * inch * 0.8   # 每列的寬度
     rowHeights = (nb.TABLE_HEIGHT / 40) * inch    
     component_table1 = Table(dis_list,  colWidths = colWidths, rowHeights=rowHeights, 
             style=style)
@@ -413,10 +444,35 @@ def VFReport(Element, VF_Task):
     component_table2 = Table(tbl_list, ##colWidths = colWidths, rowHeights=rowHeights*5, 
         style=style)
     
+    sub_head3 = sub_head("Nystagmus Analysis Table")
+    resultNystTable = []
+    for x in VF_Task.resultNyst:
+        resultNystTable.append(x)
+    style = [('GRID', (0, 2), (-1, -1), .6, colors.black),
+             ('GRID', (1, 0), (-1, -1), .6, colors.black),
+             ('GRID', (1, 2), (-1, -1), .6, colors.black),
+             ('SPAN', (1, 0), (5, 0)),
+             ('SPAN', (6, 0), (10, 0)),
+             ('TEXTCOLOR', (0, 2), (-1, 3), nb.line_color_palatte['reds'][2]),
+             ('TEXTCOLOR', (0, 4), (-1, 5), nb.line_color_palatte['blues'][2]),
+             ('FONTSIZE', (0, 0), (-1, -1), 6), # 字體大小
+             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+             ]
+    colWidths = (nb.TABLE_WIDTH / 12) * inch   # 每列的寬度
+    rowHeights = (nb.TABLE_HEIGHT / 45) * inch 
+    component_table3 = Table(VF_Task.resultNyst,  colWidths = colWidths, rowHeights=rowHeights, 
+            style=style)
+    tablenote_text1 = tablenote_text("Note: These results are for reference only and should not be used as a definitive diagnosis.")
+
+    Element.append(sub_head1)
     Element.append(component_table2)
+    #Element.append(sub_head2_1)
     Element.append(sub_head2)
     Element.append(im_gridscale)
     Element.append(Spacer(1, inch * 0.10))
     Element.append(im_figure)
+    Element.append(sub_head3)
+    Element.append(component_table3)
+    Element.append(tablenote_text1)
 
     return Element

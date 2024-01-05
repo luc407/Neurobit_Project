@@ -47,19 +47,18 @@ class Gaze9_Task(Neurobit):
         self.GetCommand()   
         
         self.GetEyePosition()
-# =============================================================================
-#         self.Preprocessing()
-# =============================================================================
-        #self.SeperateSession()                
-        if Finished_ACT: self.FeatureExtraction(ACT_Task) 
-        else: self.FeatureExtraction() 
+        if not self.NoEyes:
+        self.Preprocessing()
+            #self.SeperateSession()                
+            if Finished_ACT: self.FeatureExtraction(ACT_Task) 
+            else: self.FeatureExtraction() 
 # =============================================================================
 #         self.Save2Cloud()
 # =============================================================================
                
-        self.DrawEyeFig()
-        self.DrawEyeMesh()
-        self.DrawEyeTrack()  
+            self.DrawEyeFig()
+            self.DrawEyeMesh()
+            self.DrawEyeTrack()  
 # =============================================================================
 #         self.DrawQRCode() 
 # =============================================================================
@@ -420,12 +419,13 @@ class Gaze9_Task(Neurobit):
         fig.set_size_inches(6/1.2,3/1.2, forward=True)
         fig.set_dpi(300)
         cir_size = 25
-        try:
-            diff_V = np.round(math.degrees(math.atan(abs(170-self.Height)/220)),2)
-            if self.Height>170:
-                diff_V = -diff_V
-        except:
-            diff_V = 0
+        diff_V = 0
+        #try:
+        #    diff_V = np.round(math.degrees(math.atan(abs(170-self.Height)/220)),2)
+        #    if self.Height>170:
+        #        diff_V = -diff_V
+        #except:
+        #    diff_V = 0
         for i in range(0,len(nb.EYE)):
             ax = plt.subplot(1,2,i+1)
             ax.xaxis.set_ticks(np.array(range(MIN,MAX,5)))

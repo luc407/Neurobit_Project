@@ -12,10 +12,22 @@ import pandas as pd
 import tkinter as tk
 import subprocess
 import Neurobit
-from Gaze9_Task import Gaze9_Task
-from ACT_Task import ACT_Task
-from CUT_Task import CUT_Task
-from VF_Task import VF_Task
+try: 
+    from Gaze9_Task import Gaze9_Task
+except:
+    pass
+try: 
+    from ACT_Task import ACT_Task
+except:
+    pass
+try:
+    from CUT_Task import CUT_Task
+except:
+    pass
+try:
+    from VF_Task import VF_Task
+except:
+    pass
 from Neurobit import Neurobit as NB
 from datetime import datetime
 from reportlab.platypus import BaseDocTemplate, Image, Paragraph, Table, TableStyle, PageBreak, \
@@ -37,7 +49,7 @@ if __name__== '__main__':
     IsCalibrated    = False;
     for csv_path in csv_files:
         if not IsCalibrated:            
-            my_gui = CalibSystem(csv_path)            
+            my_gui = CalibSystem(csv_files[-1])            
             IsCalibrated = True
             Neurobit.OD_WTW = my_gui.OD_WTW
             Neurobit.OS_WTW = my_gui.OS_WTW
@@ -80,52 +92,63 @@ if __name__== '__main__':
     try: VF_task; IsVF_Task = True
     except: pass
     """Run Analysis"""
-    if IsACT_Task:
-        ACT_task.showVideo = False
-        ACT_task.MergeFile()
-        ACT_task.Exec()
-    else:
-        ACT_task = ACT_Task(csv_path)  
-        ACT_task.miss_OD = np.nan
-        ACT_task.miss_OS = np.nan
-        ACT_task.NeurobitDx_H = np.nan
-        ACT_task.NeurobitDx_V = np.nan
-        ACT_task.NeurobitDxDev_H = np.nan
-        ACT_task.NeurobitDxDev_V = np.nan
+    try:
+        if IsACT_Task:
+            ACT_task.showVideo = False
+            ACT_task.MergeFile()
+            ACT_task.Exec()
+            if ACT_task.NoEyes: IsACT_Task = False
+        else:
+            ACT_task = ACT_Task(csv_path)  
+            ACT_task.miss_OD = np.nan
+            ACT_task.miss_OS = np.nan
+            ACT_task.NeurobitDx_H = np.nan
+            ACT_task.NeurobitDx_V = np.nan
+            ACT_task.NeurobitDxDev_H = np.nan
+            ACT_task.NeurobitDxDev_V = np.nan
         
-    if IsCUT_Task:
-        CUT_task.showVideo = False
-        CUT_task.MergeFile()
-        CUT_task.Exec()
-    else:
-        CUT_task = CUT_Task(csv_path)  
-        CUT_task.miss_OD = np.nan
-        CUT_task.miss_OS = np.nan
-        CUT_task.NeurobitDx_H = np.nan
-        CUT_task.NeurobitDx_V = np.nan
-        CUT_task.NeurobitDxDev_H = np.nan
-        CUT_task.NeurobitDxDev_V = np.nan        
+        if IsCUT_Task:
+            CUT_task.showVideo = False
+            CUT_task.MergeFile()
+            CUT_task.Exec()
+            if CUT_task.NoEyes: IsCUT_Task = False
+        else:
+            CUT_task = CUT_Task(csv_path)  
+            CUT_task.miss_OD = np.nan
+            CUT_task.miss_OS = np.nan
+            CUT_task.NeurobitDx_H = np.nan
+            CUT_task.NeurobitDx_V = np.nan
+            CUT_task.NeurobitDxDev_H = np.nan
+            CUT_task.NeurobitDxDev_V = np.nan        
         
-    if IsGaze9_Task:
-        Gaze9_task.showVideo = False
-        Gaze9_task.MergeFile()
-        if IsACT_Task: Gaze9_task.Exec(ACT_task)   
-        else: Gaze9_task.Exec()
-    else:
-        Gaze9_task = Gaze9_Task(csv_path)  
-        Gaze9_task.miss_OD = np.nan
-        Gaze9_task.miss_OS = np.nan
-        Gaze9_task.NeurobitDxDev_H = np.empty([9,2])*np.nan
-        Gaze9_task.NeurobitDxDev_V = np.empty([9,2])*np.nan
-        Gaze9_task.Diff_H = np.empty([9,2])*np.nan
-        Gaze9_task.Diff_V = np.empty([9,2])*np.nan
-     
-    if IsVF_Task:
-        VF_task.showVideo = False
-        VF_task.MergeFile()
-        VF_task.Exec()
-    else:
-        VF_task = VF_Task(csv_path)  
+        if IsGaze9_Task:
+            Gaze9_task.showVideo = False
+            Gaze9_task.MergeFile()
+            #if IsACT_Task: Gaze9_task.Exec(ACT_task)   
+            #else: Gaze9_task.Exec()
+            Gaze9_task.Exec() # reference by Foward image not reference from ACT fixation eye image
+            if Gaze9_task.NoEyes: IsGaze9_Task = False
+        else:
+            Gaze9_task = Gaze9_Task(csv_path)  
+            Gaze9_task.miss_OD = np.nan
+            Gaze9_task.miss_OS = np.nan
+            Gaze9_task.NeurobitDxDev_H = np.empty([9,2])*np.nan
+            Gaze9_task.NeurobitDxDev_V = np.empty([9,2])*np.nan
+            Gaze9_task.Diff_H = np.empty([9,2])*np.nan
+            Gaze9_task.Diff_V = np.empty([9,2])*np.nan
+    except:
+        pass
+
+    try:
+        if IsVF_Task:
+            VF_task.showVideo = False
+            VF_task.MergeFile()
+            VF_task.Exec()
+            if VF_task.NoEyes: IsVF_Task = False
+        else:
+            VF_task = VF_Task(csv_path)  
+    except:
+        pass
 
     """Plot OcularMotility Report"""    
     PDF_Header = sub_head("NeuroSwift")
@@ -211,7 +234,7 @@ if __name__== '__main__':
         Element.append(PDF_Header)
         Element.append(Spacer(1, inch * 0.10))
         Element.append(Subject_Table)
-        Element.append(Spacer(1, inch * 0.10))
+        #Element.append(Spacer(1, inch * 0.10))
         VFReport(Element, VF_task)
         pdf.build(Element)
         subprocess.Popen(pdf_path, shell=True)
@@ -229,10 +252,20 @@ if __name__== '__main__':
         """', '""" + str(VF_task.result['Mean']['Right']) + """', '""" + str(VF_task.result['Min']['Right']) + """', '""" + str(VF_task.result['Min']['Right']) + """', '""" + str(VF_task.result['Std']['Right']) + 
         """', '""" + str(VF_task.result['Mean']['Left']) + """', '""" + str(VF_task.result['Min']['Left']) + """', '""" + str(VF_task.result['Min']['Left']) + """', '""" + str(VF_task.result['Std']['Left']) + 
         """', '""" + str(VF_task.result['Mean']['Diff_label']) + """', '""" + str(VF_task.result['Min']['Diff_label']) + """', '""" + str(VF_task.result['Min']['Diff_label']) + """', '""" + str(VF_task.result['Std']['Diff_label']) + 
-        """', '""" + str(VF_task.result['Mean']['Diff']) + """', '""" + str(VF_task.result['Min']['Diff']) + """', '""" + str(VF_task.result['Min']['Diff']) + """', '""" + str(VF_task.result['Std']['Diff']) + """')""")
+        """', '""" + str(VF_task.result['Mean']['Diff']) + """', '""" + str(VF_task.result['Min']['Diff']) + """', '""" + str(VF_task.result['Min']['Diff']) + """', '""" + str(VF_task.result['Std']['Diff']) + 
+        """', '""" + str(VF_task.resultNyst[2][1]) + """', '""" + str(VF_task.resultNyst[2][2]) + """', '""" + str(VF_task.resultNyst[2][3]) + """', '""" + str(VF_task.resultNyst[2][4]) + """', '""" + str(VF_task.resultNyst[2][5]) + 
+        """', '""" + str(VF_task.resultNyst[2][6]) + """', '""" + str(VF_task.resultNyst[2][7]) + """', '""" + str(VF_task.resultNyst[2][8]) + """', '""" + str(VF_task.resultNyst[2][9]) + """', '""" + str(VF_task.resultNyst[2][10]) +
+        """', '""" + str(VF_task.resultNyst[2][11]) + 
+        """', '""" + str(VF_task.resultNyst[3][1]) + """', '""" + str(VF_task.resultNyst[3][2]) + """', '""" + str(VF_task.resultNyst[3][3]) + """', '""" + str(VF_task.resultNyst[3][4]) + """', '""" + str(VF_task.resultNyst[3][5]) + 
+        """', '""" + str(VF_task.resultNyst[3][6]) + """', '""" + str(VF_task.resultNyst[3][7]) + """', '""" + str(VF_task.resultNyst[3][8]) + """', '""" + str(VF_task.resultNyst[3][9]) + """', '""" + str(VF_task.resultNyst[3][10]) +
+        """', '""" + str(VF_task.resultNyst[3][11]) + 
+        """', '""" + str(VF_task.resultNyst[4][1]) + """', '""" + str(VF_task.resultNyst[4][2]) + """', '""" + str(VF_task.resultNyst[4][3]) + """', '""" + str(VF_task.resultNyst[4][4]) + """', '""" + str(VF_task.resultNyst[4][5]) + 
+        """', '""" + str(VF_task.resultNyst[4][6]) + """', '""" + str(VF_task.resultNyst[4][7]) + """', '""" + str(VF_task.resultNyst[4][8]) + """', '""" + str(VF_task.resultNyst[4][9]) + """', '""" + str(VF_task.resultNyst[4][10]) +
+        """', '""" + str(VF_task.resultNyst[4][11]) + 
+        """', '""" + str(VF_task.resultNyst[5][1]) + """', '""" + str(VF_task.resultNyst[5][2]) + """', '""" + str(VF_task.resultNyst[5][3]) + """', '""" + str(VF_task.resultNyst[5][4]) + """', '""" + str(VF_task.resultNyst[5][5]) + 
+        """', '""" + str(VF_task.resultNyst[5][6]) + """', '""" + str(VF_task.resultNyst[5][7]) + """', '""" + str(VF_task.resultNyst[5][8]) + """', '""" + str(VF_task.resultNyst[5][9]) + """', '""" + str(VF_task.resultNyst[5][10]) +
+        """', '""" + str(VF_task.resultNyst[5][11]) +        
+        """')""")
         con.commit()     
 
-
     shutil.rmtree(Subject.save_path)
-
-

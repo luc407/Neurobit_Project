@@ -93,13 +93,14 @@ CHART_TEXT_SIZE = 7
 TABLE_WIDTH =  (A4[0]-2*H_MARGIN)/inch  # inch
 TABLE_HEIGHT =  (A4[1]-T_MARGIN-B_MARGIN)/inch  # inch
 
-global OD_WTW, OS_WTW, CAL_VAL_OD, CAL_VAL_OS, EYE_ORING
+global OD_WTW, OS_WTW, CAL_VAL_OD, CAL_VAL_OS, EYE_ORING, EYE_EMPTY_CNT
 OD_WTW = 0; 
 OS_WTW = 0;
 CAL_VAL_OD = 81862498/1000000000;
 CAL_VAL_OS = 82780884/1000000000;
 EYE_ORING = [[354,270],
              [998,253]]
+EYE_EMPTY_CNT = 0
 
 def enclosed_area(xy):
     """ 
@@ -191,6 +192,7 @@ class Neurobit():
         self.AL_OS = 25.15
         self.FolderName = []
         self.Mode = []
+        self.NoEyes = False
     
     def GetFolderPath(self):
         ID, profile, _, _ = self.GetDxSql()
@@ -300,6 +302,9 @@ class Neurobit():
             if ret == True:
                 frame_cnt+=1                             
                 OD_p,OS_p,thr = capture_eye_pupil(frame,eyes)
+                if EYE_EMPTY_CNT > 30:
+                    self.NoEyes = True
+                    break
                 if (not np.isnan(OD_p).any() and 
                     eyes[0][0]<OD_p[0]<eyes[0][0]+eyes[0][2] and 
                     eyes[0][1]<OD_p[1]<eyes[0][1]+eyes[0][3]):
@@ -336,7 +341,9 @@ class Neurobit():
         
         self.OD = np.array(OD).transpose()
         self.OS = np.array(OS).transpose()
-        self.Preprocessing()
+# =============================================================================
+#         self.Preprocessing()
+# =============================================================================
     
     def MergeFile(self):
         time = 0; date = 0; ind = 0;

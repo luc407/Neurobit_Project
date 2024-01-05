@@ -7,6 +7,7 @@ Created on Sun Jun 20 18:32:21 2021
 #import function_head as H
 import cv2
 import numpy as np
+import Neurobit as nb
 from cv2 import fitEllipse
 # =============================================================================
 # from skimage.feature import canny
@@ -92,6 +93,13 @@ def capture_eye_pupil(frame,eyes):
         gray = cv2.cvtColor(roi_color2, cv2.COLOR_BGR2GRAY)        
         gray = modify_contrast_and_brightness2(gray)
         gray = cv2.GaussianBlur(gray, (15, 15), 0)
+        if np.where(gray<100)[0].size > ew*eh/2:
+            nb.EYE_EMPTY_CNT += 1
+            OD_p=[np.nan,np.nan,np.nan]
+            OS_p=[np.nan,np.nan,np.nan]
+            break
+        else:
+            nb.EYE_EMPTY_CNT = 0
         (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray)        
 # =============================================================================
 #         cv2.destroyAllWindows()

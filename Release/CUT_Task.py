@@ -37,18 +37,17 @@ class CUT_Task(Neurobit):
         self.GetCommand()  
         
         self.GetEyePosition()  
-# =============================================================================
-#         self.Preprocessing()
-# =============================================================================
+        if not self.NoEyes:
+        self.Preprocessing()
         #self.SeperateSession()              
-        self.FeatureExtraction()  
-        self.GetDiagnosis()  
+            self.FeatureExtraction()  
+            self.GetDiagnosis()  
 # =============================================================================
 #         self.Save2Cloud()
 # =============================================================================
         
-        self.DrawEyeFig()
-        self.DrawEyeTrack()  
+            self.DrawEyeFig()
+            self.DrawEyeTrack()  
 # =============================================================================
 #         self.DrawQRCode()
 # =============================================================================

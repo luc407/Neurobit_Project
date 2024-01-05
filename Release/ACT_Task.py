@@ -35,19 +35,18 @@ class ACT_Task(Neurobit):
     def Exec(self):
         self.GetCommand()   
         
-        self.GetEyePosition() 
-# =============================================================================
-#         self.Preprocessing()
-# =============================================================================
+        self.GetEyePosition()
+        if not self.NoEyes:
+        self.Preprocessing()
         #self.SeperateSession()              
-        self.FeatureExtraction()  
-        self.GetDiagnosis()  
+            self.FeatureExtraction()  
+            self.GetDiagnosis()  
 # =============================================================================
 #         self.Save2Cloud()
 # =============================================================================
         
-        self.DrawEyeFig()
-        self.DrawEyeTrack()  
+            self.DrawEyeFig()
+            self.DrawEyeTrack()  
 # =============================================================================
 #         self.DrawQRCode()
 # =============================================================================
